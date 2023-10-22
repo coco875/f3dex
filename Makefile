@@ -38,7 +38,7 @@ ALL_OPTIONS := \
   BUG_WRONG_INIT_VZERO \
   BUG_FAIL_IF_CARRY_SET_AT_INIT
   
-ARMIPS ?= armips
+ARMIPS ?= ./armips
 PARENT_OUTPUT_DIR ?= ./build
 ifeq ($(PARENT_OUTPUT_DIR),.)
   $(error Cannot build directly in repo directory; see Makefile for details.)
@@ -112,7 +112,7 @@ define ucode_rule
    -strequ DATA_FILE $$(DATA_FILE) \
    $$(OPTIONS_EQU) \
    $$(OFF_OPTIONS_EQU) \
-   f3dex2.s \
+   f3dex.s \
    -sym2 $$(SYM_FILE) \
    -temp $$(TEMP_FILE)
   # Microcode target
@@ -140,7 +140,7 @@ define ucode_rule
   $$(CODE_FILE): CODE_FILE:=$$(CODE_FILE)
   $$(CODE_FILE): DATA_FILE:=$$(DATA_FILE)
   # Target recipe
-  $$(CODE_FILE): ./f3dex2.s ./rsp/* ucodes_database.mk $(EXTRA_DEPS) | $$(UCODE_OUTPUT_DIR)
+  $$(CODE_FILE): ./f3dex.s ./rsp/* ucodes_database.mk $(EXTRA_DEPS) | $$(UCODE_OUTPUT_DIR)
 	@printf "$(INFO)Building microcode: $(NAME): $(DESCRIPTION)$(NO_COL)\n"
 	@$(ARMIPS) -strequ ID_STR "$(ID_STR)" $$(ARMIPS_CMDLINE)
   ifneq ($(MD5_CODE),)
