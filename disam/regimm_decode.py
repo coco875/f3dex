@@ -1,4 +1,5 @@
-from extract_arg import extract_rs, extract_rt, extract_rd, special_function, extract_offset
+from extract_arg import extract_rs, extract_rt, extract_rd, special_function, extract_offset, extract_immediate
+from addr import get_address, convert_to_signed
 
 decode_function = {}
 
@@ -8,56 +9,80 @@ BGEZ = 0b00001
 def decode_bgez(asm_instruction):
     rs = extract_rs(asm_instruction)
     offset = extract_offset(asm_instruction)
-    return f"bgez ${rs}, {offset}"
+    addr = get_address()
+    offset = convert_to_signed(offset, 16)
+    addr += (offset*4)+4
+    return f"bgez ${rs}, {hex(addr)}"
 decode_function[BGEZ] = decode_bgez
 
 BGEZAL = 0b10001
 def decode_bgezal(asm_instruction):
     rs = extract_rs(asm_instruction)
     offset = extract_offset(asm_instruction)
-    return f"bgezal ${rs}, {offset}"
+    addr = get_address()
+    offset = convert_to_signed(offset, 16)
+    addr += (offset*4)+4
+    return f"bgezal ${rs}, {hex(addr)}"
 decode_function[BGEZAL] = decode_bgezal
 
 BGEZALL = 0b10011
 def decode_bgezall(asm_instruction):
     rs = extract_rs(asm_instruction)
     offset = extract_offset(asm_instruction)
-    return f"bgezall ${rs}, {offset}"
+    addr = get_address()
+    offset = convert_to_signed(offset, 16)
+    addr += (offset*4)+4
+    return f"bgezall ${rs}, {hex(addr)}"
 decode_function[BGEZALL] = decode_bgezall
 
 BGEZL = 0b00011
 def decode_bgezl(asm_instruction):
     rs = extract_rs(asm_instruction)
     offset = extract_offset(asm_instruction)
-    return f"bgezl ${rs}, {offset}"
+    addr = get_address()
+    offset = convert_to_signed(offset, 16)
+    addr += (offset*4)+4
+    return f"bgezl ${rs}, {hex(addr)}"
 decode_function[BGEZL] = decode_bgezl
 
 BLTZ = 0b00000
 def decode_bltz(asm_instruction):
     rs = extract_rs(asm_instruction)
     offset = extract_offset(asm_instruction)
-    return f"bltz ${rs}, {offset}"
+    addr = get_address()
+    offset = convert_to_signed(offset, 16)
+    addr += (offset*4)+4
+    return f"bltz ${rs}, {hex(addr)}"
 decode_function[BLTZ] = decode_bltz
 
 BLTZAL = 0b10000
 def decode_bltzal(asm_instruction):
     rs = extract_rs(asm_instruction)
     offset = extract_offset(asm_instruction)
-    return f"bltzal ${rs}, {offset}"
+    addr = get_address()
+    offset = convert_to_signed(offset, 16)
+    addr += (offset*4)+4
+    return f"bltzal ${rs}, {hex(addr)}"
 decode_function[BLTZAL] = decode_bltzal
 
 BLTZALL = 0b10010
 def decode_bltzall(asm_instruction):
     rs = extract_rs(asm_instruction)
     offset = extract_offset(asm_instruction)
-    return f"bltzall ${rs}, {offset}"
+    addr = get_address()
+    offset = convert_to_signed(offset, 16)
+    addr += (offset*4)+4
+    return f"bltzall ${rs}, {hex(addr)}"
 decode_function[BLTZALL] = decode_bltzall
 
 BLTZL = 0b00010
 def decode_bltzl(asm_instruction):
     rs = extract_rs(asm_instruction)
     offset = extract_offset(asm_instruction)
-    return f"bltzl ${rs}, {offset}"
+    addr = get_address()
+    offset = convert_to_signed(offset, 16)
+    addr += (offset*4)+4
+    return f"bltzl ${rs}, {hex(addr)}"
 decode_function[BLTZL] = decode_bltzl
 
 TEQI = 0b01100

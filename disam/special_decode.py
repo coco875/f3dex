@@ -183,7 +183,7 @@ JALR = 0b001001
 def decode_jalr(asm_instruction):
     rs = extract_rs(asm_instruction)
     rd = extract_rd(asm_instruction)
-    return f"jalr ${rd}, ${rs}"
+    return f"jalr ${rs}, ${rd}"
 decode_function[JALR] = decode_jalr
 
 JR = 0b001000

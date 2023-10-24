@@ -6,3 +6,4 @@ armips
 
 # python
 *.pyc
+test.asm

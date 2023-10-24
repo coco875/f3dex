@@ -1,4 +1,5 @@
 from extract_arg import extract_rs, extract_rt, extract_immediate, extract_target, extract_opcode
+from addr import get_address, convert_to_signed
 
 decode_function = {}
 
@@ -31,7 +32,10 @@ def decode_beq(asm_instruction):
     rs = extract_rs(asm_instruction)
     rt = extract_rt(asm_instruction)
     imm = extract_immediate(asm_instruction)
-    return f"beq ${rs}, ${rt}, {hex(imm)}"
+    addr = get_address()
+    imm = convert_to_signed(imm, 16)
+    addr += (imm*4)+4
+    return f"beq ${rs}, ${rt}, {hex(addr)}"
 decode_function[BEQ] = decode_beq
 
 BEQL = 0b010100
@@ -39,14 +43,20 @@ def decode_beql(asm_instruction):
     rs = extract_rs(asm_instruction)
     rt = extract_rt(asm_instruction)
     imm = extract_immediate(asm_instruction)
-    return f"beql ${rs}, ${rt}, {hex(imm)}"
+    addr = get_address()
+    imm = convert_to_signed(imm, 16)
+    addr += (imm*4)+4
+    return f"beql ${rs}, ${rt}, {hex(addr)}"
 decode_function[BEQL] = decode_beql
 
 BGTZ = 0b000111
 def decode_bgtz(asm_instruction):
     rs = extract_rs(asm_instruction)
     imm = extract_immediate(asm_instruction)
-    return f"bgtz ${rs}, {hex(imm)}"
+    addr = get_address()
+    imm = convert_to_signed(imm, 16)
+    addr += (imm*4)+4
+    return f"bgtz ${rs}, {hex(addr)}"
 decode_function[BGTZ] = decode_bgtz
 
 BGTZL = 0b010111
@@ -60,14 +70,20 @@ BLEZ = 0b000110
 def decode_blez(asm_instruction):
     rs = extract_rs(asm_instruction)
     imm = extract_immediate(asm_instruction)
-    return f"blez ${rs}, {hex(imm)}"
+    addr = get_address()
+    imm = convert_to_signed(imm, 16)
+    addr += (imm*4)+4
+    return f"blez ${rs}, {hex(addr)}"
 decode_function[BLEZ] = decode_blez
 
 BLEZL = 0b010110
 def decode_blezl(asm_instruction):
     rs = extract_rs(asm_instruction)
     imm = extract_immediate(asm_instruction)
-    return f"blezl ${rs}, {hex(imm)}"
+    addr = get_address()
+    imm = convert_to_signed(imm, 16)
+    addr += (imm*4)+4
+    return f"blezl ${rs}, {hex(addr)}"
 decode_function[BLEZL] = decode_blezl
 
 BNE = 0b000101
@@ -75,7 +91,10 @@ def decode_bne(asm_instruction):
     rs = extract_rs(asm_instruction)
     rt = extract_rt(asm_instruction)
     imm = extract_immediate(asm_instruction)
-    return f"bne ${rs}, ${rt}, {hex(imm)}"
+    addr = get_address()
+    imm = convert_to_signed(imm, 16)
+    addr += (imm*4)+4
+    return f"bne ${rs}, ${rt}, {hex(addr)}"
 decode_function[BNE] = decode_bne
 
 BNEL = 0b010101
@@ -83,7 +102,10 @@ def decode_bnel(asm_instruction):
     rs = extract_rs(asm_instruction)
     rt = extract_rt(asm_instruction)
     imm = extract_immediate(asm_instruction)
-    return f"bnel ${rs}, ${rt}, {hex(imm)}"
+    addr = get_address()
+    imm = convert_to_signed(imm, 16)
+    addr += (imm*4)+4
+    return f"bnel ${rs}, ${rt}, {hex(addr)}"
 decode_function[BNEL] = decode_bnel
 
 CACHE = 0b101111
@@ -113,13 +135,13 @@ decode_function[DADDIU] = decode_daddiu
 J = 0b000010
 def decode_j(asm_instruction):
     target = extract_target(asm_instruction)
-    return f"j {hex(target)}"
+    return f"j {hex(target*4)}"
 decode_function[J] = decode_j
 
 JAL = 0b000011
 def decode_jal(asm_instruction):
     target = extract_target(asm_instruction)
-    return f"jal {hex(target)}"
+    return f"jal {hex(target*4)}"
 decode_function[JAL] = decode_jal
 
 LB = 0b100000
@@ -219,9 +241,10 @@ decode_function[LW] = decode_lw
 LWCz = 0b1100
 def decode_lwc(asm_instruction):
     z = extract_opcode(asm_instruction) & 0b11
-    base = extract_rt(asm_instruction)
+    rt = extract_rt(asm_instruction)
+    base = extract_rs(asm_instruction)
     offset = extract_immediate(asm_instruction)
-    return f"lwc{z} ${base}, {offset}"
+    return f"lwc{z} ${rt}, {offset}"
 
 LWL = 0b100010
 def decode_lwl(asm_instruction):
@@ -344,9 +367,10 @@ decode_function[SW] = decode_sw
 SWCz = 0b1110
 def decode_swc(asm_instruction):
     z = extract_opcode(asm_instruction) & 0b11
-    base = extract_rt(asm_instruction)
+    rt = extract_rt(asm_instruction)
+    base = extract_rs(asm_instruction)
     offset = extract_immediate(asm_instruction)
-    return f"swc{z} ${base}, {offset}"
+    return f"swc{z} ${rt}, {offset}"
 
 SWL = 0b101010
 def decode_swl(asm_instruction):
