@@ -25,5 +25,10 @@ unklabel_0004:
 
 .close // DATA_FILE
 .create CODE_FILE, 0x00001080
-j 0x00001080
+j 0x10005f0
+addi $29, $0, 272
+jal 0x100044f
+add $20, $0, $22
+lh $2, 188($1)
+jr $2
 .close // CODE_FILE
