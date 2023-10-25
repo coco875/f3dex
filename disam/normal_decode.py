@@ -398,6 +398,8 @@ decode_function[XORI] = decode_xori
 
 def decode_normal(asm_instruction):
     opcode = extract_opcode(asm_instruction)
+    if opcode in decode_function:
+        return decode_function[opcode](asm_instruction)
     if (opcode>>2) == LDCz:
         return decode_ldc(asm_instruction)
     if (opcode>>2) == LWCz:
@@ -406,8 +408,6 @@ def decode_normal(asm_instruction):
         return decode_sdc(asm_instruction)
     if (opcode>>2) == SWCz:
         return decode_swc(asm_instruction)
-    if opcode in decode_function:
-        return decode_function[opcode](asm_instruction)
     print(bin(opcode))
     print("no normal found")
     return None
