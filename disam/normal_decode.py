@@ -1,5 +1,6 @@
 from extract_arg import extract_rs, extract_rt, extract_immediate, extract_target, extract_opcode
 from addr import get_address, convert_to_signed
+from cop2_decode import decode_SWC2, decode_LWC2
 
 decode_function = {}
 
@@ -241,6 +242,8 @@ decode_function[LW] = decode_lw
 LWCz = 0b1100
 def decode_lwc(asm_instruction):
     z = extract_opcode(asm_instruction) & 0b11
+    if z == 0b10:
+        return decode_LWC2(asm_instruction)
     rt = extract_rt(asm_instruction)
     base = extract_rs(asm_instruction)
     offset = extract_immediate(asm_instruction)
@@ -367,6 +370,8 @@ decode_function[SW] = decode_sw
 SWCz = 0b1110
 def decode_swc(asm_instruction):
     z = extract_opcode(asm_instruction) & 0b11
+    if z == 0b10:
+        return decode_SWC2(asm_instruction)
     rt = extract_rt(asm_instruction)
     base = extract_rs(asm_instruction)
     offset = extract_immediate(asm_instruction)

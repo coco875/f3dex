@@ -13,6 +13,9 @@ def extract_rd(asm_instruction:int):
 def extract_sa(asm_instruction:int):
     return (asm_instruction >> 6) & 0b11111
 
+def extract_7bit(asm_instruction:int):
+    return asm_instruction & 0b1111111
+
 def special_function(asm_instruction:int):
     return asm_instruction & 0b111111
 
