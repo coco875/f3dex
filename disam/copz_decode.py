@@ -1,4 +1,5 @@
 from extract_arg import extract_rs, extract_rt, extract_rd, extract_opcode, extract_offset, special_function
+from cop2_decode import decode_COP2
 
 COPZ = 0b0100
 
@@ -88,6 +89,8 @@ def decode_mtc(asm_instruction,z):
 
 def decode_copz(asm_instruction):
     z = extract_opcode(asm_instruction) & 0b11
+    if z==2:
+        return decode_COP2(asm_instruction)
     rs = extract_rs(asm_instruction)
     rt = extract_rt(asm_instruction)
     if rs == BC:
