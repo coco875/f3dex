@@ -9,6 +9,53 @@
     .error "armips 0.11 or newer is required"
 .endif
 
+// Tweak the li and la macros so that the output matches
+.macro li, reg, imm
+    addi reg, $zero, imm
+.endmacro
+
+.macro la, reg, imm
+    addiu reg, $zero, imm
+.endmacro
+
+.macro move, dst, src
+    ori dst, src, 0
+.endmacro
+
+// Prohibit macros involving slt; this silently clobbers $1. You can of course
+// manually write the slt and branch instructions if you want this behavior.
+.macro blt, ra, rb, lbl
+    .error "blt is a macro using slt, and silently clobbers $1!"
+.endmacro
+
+.macro bgt, ra, rb, lbl
+    .error "bgt is a macro using slt, and silently clobbers $1!"
+.endmacro
+
+.macro ble, ra, rb, lbl
+    .error "ble is a macro using slt, and silently clobbers $1!"
+.endmacro
+
+.macro bge, ra, rb, lbl
+    .error "bge is a macro using slt, and silently clobbers $1!"
+.endmacro
+
+// Vector macros
+.macro vcopy, dst, src
+    vadd dst, src, $v0[0]
+.endmacro
+
+.macro vclr, dst
+    vxor dst, dst, dst
+.endmacro
+
+ACC_UPPER equ 0
+ACC_MIDDLE equ 1
+ACC_LOWER equ 2
+.macro vreadacc, dst, N
+    vsar dst, dst, dst[N]
+.endmacro
+
 // RSP DMEM
 .create DATA_FILE, 0x0000
 // 0x0000-0x0004
@@ -26,7 +73,7 @@ unklabel_0004:
 .close // DATA_FILE
 .create CODE_FILE, 0x00001080
 j 0x40017c0
-addi $29, $0, 272
+li $29, 272
 jal 0x400113c
 add $20, $0, $22
 lh $2, 188($1)
@@ -34,24 +81,25 @@ jr $2
 srl $2, $25, 23
 mfc0 $2, $4
 andi $2, $2, 128
-bne $2, $0, 0x10c0
+bne $2, $0, branch_0x10C0
 lh $21, 38($0)
 bne $28, $27, 0x1064
 lw $25, 0($27)
 j 0x40010c8
 lh $31, 260($0)
 lh $21, 182($0)
+branch_0x10C0:
 j 0x40010f0
 ori $30, $0, 32
-addi $28, $0, 2784
+li $28, 2784
 add $21, $0, $31
-addi $20, $0, 2464
+li $20, 2464
 add $19, $0, $26
 addi $26, $26, 320
 jal 0x400113c
-addi $18, $0, 319
+li $18, 319
 jr $21
-addi $27, $0, 2464
+li $27, 2464
 add $21, $0, $31
 lw $19, 0($30)
 lh $18, 4($30)
@@ -108,14 +156,14 @@ bgez $20, 0x11a8
 sll $0, $0, 0
 add $23, $19, $18
 addi $18, $18, 65535
-addi $20, $0, 3296
+li $20, 3296
 jal 0x4001140
-addi $17, $0, 1
+li $17, 1
 jal 0x400112c
 sw $23, 24($29)
 mtc0 $23, $9
 jr $21
-addi $23, $0, 3296
+li $23, 3296
 andi $2, $2, 254
 lh $2, 118($2)
 jr $2
@@ -169,14 +217,14 @@ lh $24, 190($0)
 sbv v31[6], 28($29)
 lw $19, 36($29)
 lw $3, 4064($0)
-addi $20, $0, 992
+li $20, 992
 sub $3, $3, $19
 bgez $3, 0x109c
 addi $19, $19, 65472
 jal 0x400113c
-addi $18, $0, 63
+li $18, 63
 jal 0x400112c
-addi $3, $0, 1120
+li $3, 1120
 j 0x4001644
 sw $19, 36($29)
 lbu $1, 65531($27)
@@ -200,7 +248,7 @@ addi $7, $29, 12
 lw $3, 0($7)
 lbu $5, 65531($27)
 lbu $6, 65530($27)
-addi $2, $0, 1
+li $2, 1
 sllv $2, $2, $5
 addi $2, $2, 65535
 sllv $2, $2, $6
@@ -372,16 +420,16 @@ andi $8, $1, 1
 sbv v31[6], 28($29)
 bne $8, $0, 0x1654
 andi $7, $1, 2
-addi $20, $0, 992
+li $20, 992
 andi $8, $1, 4
 beq $8, $0, 0x1620
 lqv v26[0], 48(r22)
 lw $19, 36($29)
 lw $8, 76($29)
-addi $17, $0, 1
+li $17, 1
 addi $1, $19, 64
 beq $19, $8, 0x1620
-addi $12, $0, 63
+li $12, 63
 jal 0x4001140
 sw $1, 36($29)
 jal 0x400112c
@@ -391,17 +439,17 @@ lqv v27[0], 32(r22)
 sqv v26[0], 48($20)
 lqv v29[0], 0(r22)
 sqv v28[0], 16($20)
-addi $3, $0, 1120
+li $3, 1120
 sqv v27[0], 32($20)
 sqv v29[0], 0($20)
-addi $1, $0, 992
-addi $2, $0, 1056
+li $1, 992
+li $2, 1056
 j 0x4001684
 lh $31, 190($0)
 lqv v26[0], 48(r22)
 j 0x4001620
-addi $20, $0, 1056
-addiu $3, $0, 3552
+li $20, 1056
+la $3, 3552
 addu $1, $0, $22
 jal 0x4001684
 addu $2, $0, $20
@@ -435,7 +483,7 @@ bne $3, $19, 0x1688
 addi $3, $3, 16
 jr $31
 sll $0, $0, 0
-addi $8, $0, 896
+li $8, 896
 lqv v3[0], 80(r0)
 lsv v19[0], 2(r29)
 lh $3, 4($29)
@@ -445,7 +493,7 @@ ldv v0[8], 0(r8)
 ldv v1[8], 8(r8)
 jr $31
 vmudh v0, v0, v3
-addi $8, $0, 1120
+li $8, 1120
 ldv v11[0], 24(r8)
 ldv v11[8], 24(r8)
 ldv v15[0], 56(r8)
@@ -489,6 +537,7 @@ lh $21, 256($0)
 ori $30, $0, 24
 beq $0, $0, 0x10f0
 lh $21, 160($0)
+branch_0x17C0:
 ori $2, $0, 10240
 mtc0 $2, $4
 lqv v31[0], 48(r0)
@@ -513,16 +562,16 @@ sll $0, $0, 0
 beq $5, $4, 0x1824
 sll $0, $0, 0
 j 0x4001840
-ori $3, $4, 0
+move $3, $4
 mfc0 $4, $11
 andi $4, $4, 1024
 bne $4, $0, 0x1824
-addi $4, $0, 1
+li $4, 1
 mtc0 $4, $11
 mtc0 $3, $8
 mtc0 $3, $9
 sw $3, 24($29)
-addi $23, $0, 3296
+li $23, 3296
 lw $5, 16($1)
 lw $2, 8($0)
 lw $3, 16($0)
@@ -537,7 +586,7 @@ sw $3, 16($0)
 sw $4, 24($0)
 sw $6, 32($0)
 jal 0x40010ec
-addi $30, $0, 8
+li $30, 8
 jal 0x40010c8
 lw $26, 48($1)
 lw $2, 32($1)
@@ -551,7 +600,7 @@ sw $2, 264($0)
 j 0x4001058
 sll $0, $0, 0
 jal 0x40010ec
-addi $30, $0, 8
+li $30, 8
 lw $23, 3056($0)
 lw $28, 3044($0)
 lw $27, 3048($0)
@@ -634,7 +683,7 @@ llv v13[0], 24(r1)
 llv v14[0], 24(r2)
 llv v15[0], 24(r3)
 lw $13, 4($29)
-addi $8, $0, 3040
+li $8, 3040
 lsv v21[0], 2(r29)
 lsv v5[0], 6(r1)
 vsub v10, v14, v13
@@ -649,9 +698,9 @@ vmudh v16, v9, v10[1w]
 lh $9, 26($1)
 vmadh v16, v12, v9[1w]
 lh $10, 26($2)
-vsar v28, v28, v28[1w]
+vreadacc v28, 1w
 lh $11, 26($3)
-vsar v29, v29, v29[0w]
+vreadacc v29, 0w
 sll $15, $13, 18
 mfc2 $17, v16[0]
 sh $1, 3040($0)
@@ -862,14 +911,14 @@ vmudn v6, v10, v4[3w]
 vmadh v6, v9, v4[3w]
 vmadn v6, v22, v4[5w]
 vmadh v6, v21, v4[5w]
-vsar v9, v9, v9[0w]
-vsar v10, v10, v10[1w]
+vreadacc v9, 0w
+vreadacc v10, 1w
 vmudn v6, v12, v4[4w]
 vmadh v6, v11, v4[4w]
 vmadn v6, v20, v4[2w]
 vmadh v6, v19, v4[2w]
-vsar v11, v11, v11[0w]
-vsar v12, v12, v12[1w]
+vreadacc v11, 0w
+vreadacc v12, 1w
 vmudl v6, v10, v26[3w]
 vmadm v6, v9, v26[3w]
 vmadn v10, v10, v27[3w]
@@ -903,7 +952,7 @@ sdv v17[0], 960($23)
 sdv v18[0], 976($23)
 blez $7, 0x1f2c
 andi $7, $5, 1
-addi $16, $0, 2048
+li $16, 2048
 mtc2 $16, v19
 vabs v24, v9, v9
 ldv v20[8], 64(r8)
@@ -993,7 +1042,7 @@ ssv v17[14], 240($23)
 ssv v18[14], 242($23)
 jal 0x4001168
 addi $31, $24, 0
-addi $31, $0, 0
+li $31, 0
 jr $24
 sll $0, $0, 0
 sll $0, $0, 0
@@ -1020,7 +1069,7 @@ vmadh v27, v27, v25
 jr $31
 sll $0, $0, 0
 jal 0x400112c
-addi $27, $0, 2464
+li $27, 2464
 lw $25, 0($27)
 lw $24, 4($27)
 srl $1, $25, 29
@@ -1028,7 +1077,7 @@ andi $1, $1, 6
 addi $27, $27, 8
 bgtz $1, 0x2040
 andi $18, $25, 1023
-addi $22, $0, 2784
+li $22, 2784
 jal 0x400110c
 add $19, $24, $0
 beq $0, $0, 0x2054
@@ -1050,9 +1099,9 @@ xori $30, $30, 20
 beq $6, $0, 0x2224
 lh $11, 166($6)
 addi $6, $6, 65534
-ori $17, $0, 0
+move $17, $0
 or $18, $0, $0
-ori $2, $5, 0
+move $2, $5
 j 0x4001814
 addi $14, $30, 2
 and $8, $8, $11
@@ -1066,7 +1115,7 @@ bne $10, $0, 0x2098
 lh $8, 36($10)
 addi $8, $17, 65534
 bgtz $8, 0x20b0
-ori $2, $5, 0
+move $2, $5
 beq $8, $0, 0x2078
 sll $0, $0, 0
 jr $24
@@ -1078,7 +1127,7 @@ lh $8, 258($0)
 mtc2 $10, v13
 or $10, $20, $0
 mfc2 $20, v13[0]
-ori $14, $30, 0
+move $14, $30
 lh $8, 248($0)
 sh $8, 262($0)
 addi $7, $7, 40
@@ -1176,7 +1225,7 @@ sw $16, 4($7)
 bltz $1, 0x22fc
 lpv v4[0], 0(r7)
 luv v7[0], 464(r1)
-vxor v27, v27, v27
+vclr v27
 vge v7, v7, v31[0w]
 lpv v5[0], 448(r1)
 vadd v27, v27, v7
@@ -1211,7 +1260,7 @@ vadd v18, v18, v31[4w]
 andi $1, $1, 4095
 sw $1, 300($0)
 jal 0x4001724
-addi $8, $0, 992
+li $8, 992
 ori $8, $0, 3552
 stv v8[2], 16($8)
 stv v8[4], 32($8)
@@ -1283,7 +1332,7 @@ sw $27, 3048($0)
 sw $26, 3052($0)
 sw $23, 3056($0)
 lw $19, 264($0)
-ori $20, $0, 0
+move $20, $0
 ori $18, $0, 3071
 jal 0x4001140
 ori $17, $0, 1
@@ -1293,7 +1342,7 @@ j 0x40010bc
 mtc0 $2, $4
 sll $0, $0, 0
 sll $0, $0, 0
-addiu $0, $0, 48879
+la $0, 48879
 sll $0, $0, 0
 sll $0, $0, 0
 sll $0, $0, 0
