@@ -62,7 +62,7 @@ def decode_spv(asm_instruction):
     rs = extract_rs(asm_instruction)
     bits = extract_7bit(asm_instruction)
     idx = asm_instruction>>7 & 0b1111
-    return f"spv v{rt}[{idx}], {bits<<6}(${rs})"
+    return f"spv v{rt}[{idx}], {bits<<3}(${rs})"
 decode_functions_swc2[spv] = decode_spv
 
 suv = 0b00111
@@ -107,7 +107,7 @@ def decode_stv(asm_instruction):
     rs = extract_rs(asm_instruction)
     bits = extract_7bit(asm_instruction)
     idx = asm_instruction>>7 & 0b1111
-    return f"stv v{rt}[{idx}], {bits<<11}(${rs})"
+    return f"stv v{rt}[{idx}], {bits<<4}(${rs})"
 decode_functions_swc2[stv] = decode_stv
 
 def decode_SWC2(asm_instruction):
@@ -123,99 +123,99 @@ lbv = 0b00000
 def decode_lbv(asm_instruction):
     rt = extract_rt(asm_instruction)
     rs = extract_rs(asm_instruction)
-    bits = extract_7bit(asm_instruction)
+    imm = (asm_instruction & 0b1111111) << 3
     idx = asm_instruction>>7 & 0b1111
-    return f"lbv v{rt}[{idx}], {bits}(${rs})"
+    return f"lbv v{rt}[{idx}], {imm}(r{rs})"
 decode_functions_lwc2[lbv] = decode_lbv
 
 lsv = 0b00001
 def decode_lsv(asm_instruction):
     rt = extract_rt(asm_instruction)
     rs = extract_rs(asm_instruction)
-    bits = extract_7bit(asm_instruction)
+    imm = (asm_instruction & 0b1111111) << 1
     idx = asm_instruction>>7 & 0b1111
-    return f"lsv v{rt}[{idx}], {bits<<1}(${rs})"
+    return f"lsv v{rt}[{idx}], {imm}(r{rs})"
 decode_functions_lwc2[lsv] = decode_lsv
 
 llv = 0b00010
 def decode_llv(asm_instruction):
     rt = extract_rt(asm_instruction)
     rs = extract_rs(asm_instruction)
-    bits = extract_7bit(asm_instruction)
+    imm = (asm_instruction & 0b1111111) << 2
     idx = asm_instruction>>7 & 0b1111
-    return f"llv v{rt}[{idx}], {bits<<2}(${rs})"
+    return f"llv v{rt}[{idx}], {imm}(r{rs})"
 decode_functions_lwc2[llv] = decode_llv
 
 ldv = 0b00011
 def decode_ldv(asm_instruction):
     rt = extract_rt(asm_instruction)
     rs = extract_rs(asm_instruction)
-    bits = extract_7bit(asm_instruction)
+    imm = (asm_instruction & 0b1111111) << 3
     idx = asm_instruction>>7 & 0b1111
-    return f"ldv v{rt}[{idx}], {bits<<3}(${rs})"
+    return f"ldv v{rt}[{idx}], {imm}(r{rs})"
 decode_functions_lwc2[ldv] = decode_ldv
 
 lqv = 0b00100
 def decode_lqv(asm_instruction):
     rt = extract_rt(asm_instruction)
     rs = extract_rs(asm_instruction)
-    bits = extract_7bit(asm_instruction)
+    imm = (asm_instruction & 0b1111111) << 4
     idx = asm_instruction>>7 & 0b1111
-    return f"lqv v{rt}[{idx}], {bits<<4}(${rs})"
+    return f"lqv v{rt}[{idx}], {imm}(r{rs})"
 decode_functions_lwc2[lqv] = decode_lqv
 
 lrv = 0b00101
 def decode_lrv(asm_instruction):
     rt = extract_rt(asm_instruction)
     rs = extract_rs(asm_instruction)
-    bits = extract_7bit(asm_instruction)
+    imm = (asm_instruction & 0b1111111) << 3
     idx = asm_instruction>>7 & 0b1111
-    return f"lrv v{rt}[{idx}], {bits<<5}(${rs})"
+    return f"lrv v{rt}[{idx}], {imm}(r{rs})"
 decode_functions_lwc2[lrv] = decode_lrv
 
 lpv = 0b00110
 def decode_lpv(asm_instruction):
     rt = extract_rt(asm_instruction)
     rs = extract_rs(asm_instruction)
-    bits = extract_7bit(asm_instruction)
+    imm = (asm_instruction & 0b1111111) << 3
     idx = asm_instruction>>7 & 0b1111
-    return f"lpv v{rt}[{idx}], {bits<<6}(${rs})"
+    return f"lpv v{rt}[{idx}], {imm}(r{rs})"
 decode_functions_lwc2[lpv] = decode_lpv
 
 luv = 0b00111
 def decode_luv(asm_instruction):
     rt = extract_rt(asm_instruction)
     rs = extract_rs(asm_instruction)
-    bits = extract_7bit(asm_instruction)
+    imm = (asm_instruction & 0b1111111) << 3
     idx = asm_instruction>>7 & 0b1111
-    return f"luv v{rt}[{idx}], {bits<<7}(${rs})"
+    return f"luv v{rt}[{idx}], {imm}(r{rs})"
 decode_functions_lwc2[luv] = decode_luv
 
 lhv = 0b01000
 def decode_lhv(asm_instruction):
     rt = extract_rt(asm_instruction)
     rs = extract_rs(asm_instruction)
-    bits = extract_7bit(asm_instruction)
+    imm = (asm_instruction & 0b1111111) << 3
     idx = asm_instruction>>7 & 0b1111
-    return f"lhv v{rt}[{idx}], {bits<<8}(${rs})"
+    return f"lhv v{rt}[{idx}], {imm}(r{rs})"
 decode_functions_lwc2[lhv] = decode_lhv
 
 lfv = 0b01001
 def decode_lfv(asm_instruction):
     rt = extract_rt(asm_instruction)
     rs = extract_rs(asm_instruction)
-    bits = extract_7bit(asm_instruction)
+    imm = (asm_instruction & 0b1111111) << 3
     idx = asm_instruction>>7 & 0b1111
-    return f"lfv v{rt}[{idx}], {bits<<9}(${rs})"
+    return f"lfv v{rt}[{idx}], {imm}(r{rs})"
 decode_functions_lwc2[lfv] = decode_lfv
 
 ltv = 0b01011
 def decode_ltv(asm_instruction):
     rt = extract_rt(asm_instruction)
     rs = extract_rs(asm_instruction)
-    bits = extract_7bit(asm_instruction)
+    imm = (asm_instruction & 0b1111111) << 4
     idx = asm_instruction>>7 & 0b1111
-    return f"ltv v{rt}[{idx}], {bits<<10}(${rs})"
+    return f"ltv v{rt}[{idx}], {imm}(r{rs})"
 decode_functions_lwc2[ltv] = decode_ltv
 
 def decode_LWC2(asm_instruction):
@@ -1088,7 +1088,7 @@ def decode_vrsq(asm_instruction):
 
     idx2 = asm_instruction>>11 & 0b111
     v2 = asm_instruction>>16 & 0b11111
-    return f"vrsq v{v2}[{idx2}], v{v1}[{idx1}]"
+    return f"vrsq v{v1}[{idx2}], v{v2}[{idx1}]"
 decode_functions_cop2_rsp[vrsq] = decode_vrsq
 
 vrsql = 0b110101
@@ -1098,7 +1098,7 @@ def decode_vrsql(asm_instruction):
 
     idx2 = asm_instruction>>11 & 0b111
     v2 = asm_instruction>>16 & 0b11111
-    return f"vrsql v{v2}[{idx2}], v{v1}[{idx1}]"
+    return f"vrsql v{v1}[{idx2}], v{v2}[{idx1}]"
 decode_functions_cop2_rsp[vrsql] = decode_vrsql
 
 vrsqh = 0b110110
@@ -1108,7 +1108,7 @@ def decode_vrsqh(asm_instruction):
 
     idx2 = asm_instruction>>11 & 0b111
     v2 = asm_instruction>>16 & 0b11111
-    return f"vrsqh v{v2}[{idx2}], v{v1}[{idx1}]"
+    return f"vrsqh v{v1}[{idx2}], v{v2}[{idx1}]"
 decode_functions_cop2_rsp[vrsqh] = decode_vrsqh
 
 def decode_COP2(asm_instruction):
