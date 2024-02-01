@@ -9,6 +9,16 @@
     .error "armips 0.11 or newer is required"
 .endif
 
+// Arguments to mtx_multiply
+output_mtx  equ $18 // also dmaLen, also used by itself
+input_mtx_1 equ $19 // also dmemAddr and xfrmLtPtr
+input_mtx_0 equ $20 // also clipPolyWrite
+
+// Arguments to dma_read_write
+dmaLen   equ $18 // also output_mtx, also used by itself
+dmemAddr equ $19 // also input_mtx_1 and xfrmLtPtr
+// cmd_w1_dram   // used for all dma_read_write DRAM addresses, not just second word of command
+
 // Tweak the li and la macros so that the output matches
 .macro li, reg, imm
     addi reg, $zero, imm
@@ -81,7 +91,7 @@ start:
     jr $2
     srl $2, $25, 23
 branch_0x109C:
-    mfc0 $2, $4
+    mfc0 $2, SP_STATUS
     andi $2, $2, 128
     bne $2, $0, branch_0x10C0
     lh $21, 38($0)
@@ -135,14 +145,14 @@ branch_0x1140:
     mfc0 $11, $5
     bne $11, $0, branch_0x1140
     nop
-    mtc0 $20, $0
-    bgtz $17, branch_0x1160
+    mtc0 $20, SP_MEM_ADDR
+    bgtz $17, dma_write
     mtc0 $19, $1
     jr $31
-    mtc0 $18, $2
-branch_0x1160:
+    mtc0 dmaLen, SP_RD_LEN
+dma_write:
     jr $31
-    mtc0 $18, $3
+    mtc0 dmaLen, SP_WR_LEN
 branch_0x1168:
     add $21, $0, $31
     lw $19, 24($29)
@@ -153,8 +163,8 @@ branch_0x1168:
     sub $20, $23, $20
     bgez $20, branch_0x11A8
 branch_0x1188:
-    mfc0 $20, $11
-    andi $20, $20, 1024
+    mfc0 $20, DPC_STATUS
+    andi $20, $20, DPC_STATUS_START_VALID
     bne $20, $0, branch_0x1188
 branch_0x1194:
     mfc0 $23, $10
@@ -597,28 +607,28 @@ branch_0x17C8:
     lw $3, 44($1)
     sw $23, 64($29)
     sw $3, 68($29)
-    mfc0 $4, $11
+    mfc0 $4, DPC_STATUS
     andi $4, $4, 1
-    bne $4, $0, branch_0x1824
+    bne $4, $0, wait_dpc_start_valid
     mfc0 $4, $9
     sub $23, $23, $4
-    bgtz $23, branch_0x1824
+    bgtz $23, wait_dpc_start_valid
     mfc0 $5, $10
-    beq $5, $0, branch_0x1824
+    beq $5, $0, wait_dpc_start_valid
     nop
 branch_0x1814:
-    beq $5, $4, branch_0x1824
+    beq $5, $4, wait_dpc_start_valid
     nop
     j branch_0x1840
     move $3, $4
-branch_0x1824:
-    mfc0 $4, $11
-    andi $4, $4, 1024
-    bne $4, $0, branch_0x1824
+wait_dpc_start_valid:
+    mfc0 $4, DPC_STATUS
+    andi $4, $4, DPC_STATUS_START_VALID
+    bne $4, $0, wait_dpc_start_valid
     li $4, 1
-    mtc0 $4, $11
-    mtc0 $3, $8
-    mtc0 $3, $9
+    mtc0 $4, DPC_STATUS
+    mtc0 $3, DPC_START
+    mtc0 $3, DPC_END
 branch_0x1840:
     sw $3, 24($29)
     li $23, 3296
