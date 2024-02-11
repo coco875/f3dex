@@ -91,39 +91,39 @@ postOvlRA     equ $12
 // $11: ovlTableEntry, very common local
 start:
     j task_init
-    li $29, 272
+    li $29, 0x110
     jal branch_0x113c
-    add $20, $0, $22
-    lh $2, 188($1)
+    add $20, $zero, $22
+    lh $2, 0xBC($1)
     jr $2
     srl $2, $25, 23
 branch_0x109C:
     mfc0 $2, SP_STATUS
-    andi $2, $2, 128
-    bne $2, $0, branch_0x10C0
-    lh $21, 38($0)
+    andi $2, $2, 0x80
+    bnez $2, branch_0x10C0
+    lh $21, 0x26($zero)
 branch_0x10AC:
     bne $28, $27, 0x4001064
     lw $25, 0($27)
     j branch_0x10c8
-    lh $31, 260($0)
+    lh $31, 0x104($zero)
 branch_0x10BC:
-    lh $21, 182($0)
+    lh $21, 182($zero)
 branch_0x10C0:
     j branch_0x10F0
-    ori $30, $0, 32
+    ori $30, $zero, 32
 branch_0x10c8:
     li $28, 2784
-    add $21, $0, $31
+    add $21, $zero, $31
     li $20, 2464
-    add $19, $0, $26
+    add $19, $zero, $26
     addi $26, $26, 320
     jal branch_0x113c
     li $18, 319
     jr $21
     li $27, 2464
 branch_0x10EC:
-    add $21, $0, $31
+    add $21, $zero, $31
 branch_0x10F0:
     lw $19, 0($30)
     lh $18, 4($30)
@@ -133,11 +133,11 @@ branch_0x10F0:
     nop
     jr $21
 branch_0x110C:
-    lw $11, 184($0)
+    lw $11, 184($zero)
     srl $12, $19, 22
     andi $12, $12, 60
     and $19, $19, $11
-    add $13, $0, $12
+    add $13, $zero, $12
     lw $12, 352($13)
     jr $ra
     add $19, $19, $12
@@ -147,7 +147,7 @@ while_dma_busy:
     nop
     jr $ra
 branch_0x113c:
-    add $17, $0, $0
+    add $17, $zero, $zero
 dma_read_write:
     mfc0 $11, SP_DMA_FULL
     bnez $11, dma_read_write
@@ -161,7 +161,7 @@ dma_write:
     jr $ra
     mtc0 dmaLen, SP_WR_LEN
 branch_0x1168:
-    add $21, $0, $31
+    add $21, $zero, $31
     lw $19, 24($29)
     addi $18, $23, 62240
     lw $23, 68($29)
@@ -203,9 +203,9 @@ branch_0x11E4:
     lh $2, 118($2)
     jr $2
     lbu $1, 65535($27)
-    lh $24, 190($0)
+    lh $24, 190($zero)
 branch_0x1200:
-    lh $31, 918($0)
+    lh $31, 918($zero)
 branch_0x1204:
     lbu $1, 65533($27)
     lbu $2, 65534($27)
@@ -221,9 +221,9 @@ branch_0x1210:
     lbu $1, 65529($27)
     lbu $2, 65530($27)
     lbu $3, 65531($27)
-    lh $31, 918($0)
+    lh $31, 918($zero)
     j branch_0x1210
-    lh $24, 190($0)
+    lh $24, 190($zero)
     jal branch_0x1204
     lbu $7, 65532($27)
     lhu $7, 796($7)
@@ -233,31 +233,31 @@ branch_0x1210:
     lh $11, 26($7)
     sub $6, $8, $10
     bgez $6, branch_0x1270
-    sh $1, 3290($0)
+    sh $1, 3290($zero)
     sub $6, $10, $8
 branch_0x1270:
     sub $12, $9, $11
     bgez $12, branch_0x1280
-    sh $3, 3292($0)
+    sh $3, 3292($zero)
     sub $12, $11, $9
     branch_0x1280:
     sub $6, $6, $12
     blez $6, branch_0x1294
-    sh $7, 3294($0)
+    sh $7, 3294($zero)
     addi $3, $7, 0
-    sh $2, 3290($0)
+    sh $2, 3290($zero)
 branch_0x1294:
     jal branch_0x19C8
     addi $24, $31, 0
-    beq $31, $0, branch_0x109C
-    lh $1, 3292($0)
-    lh $2, 3294($0)
-    lh $3, 3290($0)
+    beq $31, $zero, branch_0x109C
+    lh $1, 3292($zero)
+    lh $2, 3294($zero)
+    lh $3, 3290($zero)
     j branch_0x19C8
-    lh $24, 190($0)
+    lh $24, 190($zero)
     sbv v31[6], 28($29)
     lw $19, 36($29)
-    lw $3, 4064($0)
+    lw $3, 4064($zero)
     li $20, 992
     sub $3, $3, $19
     bgez $3, branch_0x109C
@@ -294,7 +294,7 @@ branch_0x1330:
     sllv $2, $2, $5
     addi $2, $2, 65535
     sllv $2, $2, $6
-    nor $2, $2, $0
+    nor $2, $2, $zero
     and $2, $2, $3
     or $3, $2, $24
     sw $3, 0($7)
@@ -302,13 +302,13 @@ branch_0x1330:
     j branch_0x13FC
     lw $24, 12($29)
     andi $25, $25, 1023
-    ori $2, $0, 28784
+    ori $2, $zero, 28784
 branch_0x1370:
     lh $3, 1220($25)
     addi $25, $25, 40
     bne $25, $24, branch_0x1370
     and $2, $2, $3
-    beq $2, $0, branch_0x109C
+    beq $2, $zero, branch_0x109C
     lb $2, 0($29)
     addi $2, $2, 65532
     bltz $2, branch_0x10BC
@@ -322,7 +322,7 @@ branch_0x1370:
     j branch_0x109C
     sw $2, 4($29)
     lw $2, 4($29)
-    nor $3, $24, $0
+    nor $3, $24, $zero
     and $2, $2, $3
     j branch_0x109C
     sw $2, 4($29)
@@ -337,8 +337,8 @@ branch_0x1370:
     bltz $2, branch_0x13FC
     addi $2, $2, 24
     jal branch_0x110C
-    add $19, $24, $0
-    add $24, $19, $0
+    add $19, $24, $zero
+    add $24, $19, $zero
 branch_0x13FC:
     sw $25, 0($23)
     sw $24, 4($23)
@@ -353,8 +353,8 @@ branch_0x13FC:
     lbu $1, 65529($27)
     jr $2
     andi $6, $1, 15
-    lh $8, 190($0)
-    sh $8, 262($0)
+    lh $8, 190($zero)
+    sh $8, 262($zero)
     lbu $9, 65530($27)
     ldv v2[0], 0(r22)
     ldv v2[8], 16(r22)
@@ -378,7 +378,7 @@ branch_0x145C:
     vmadn v28, v15, v31[1w]
     llv v18[8], 24(r22)
     vmadh v29, v11, v31[1w]
-    bne $1, $0, branch_0x17B4
+    bne $1, $zero, branch_0x17B4
     addi $22, $22, 32
 branch_0x1498:
     vmudm v18, v18, v17
@@ -432,7 +432,7 @@ branch_0x149C:
     vmadn v7, v31, v31[0w]
     vge v6, v6, v29[1q]
     sw $15, 16($7)
-    beq $12, $0, branch_0x1590
+    beq $12, $zero, branch_0x1590
     vlt v6, v6, v29[0q]
     lqv v3[0], 912(r0)
     vmudn v5, v5, v3[0w]
@@ -463,15 +463,15 @@ branch_0x1590:
     addi $7, $7, 80
     bgtz $9, branch_0x145C
 branch_0x15D4:
-    lh $8, 262($0)
+    lh $8, 262($zero)
     jr $8
     andi $8, $1, 1
     sbv v31[6], 28($29)
-    bne $8, $0, branch_0x1654
+    bne $8, $zero, branch_0x1654
     andi $7, $1, 2
     li $20, 992
     andi $8, $1, 4
-    beq $8, $0, branch_0x1620
+    beq $8, $zero, branch_0x1620
     lqv v26[0], 48(r22)
     lw $19, 36($29)
     lw $8, 76($29)
@@ -484,7 +484,7 @@ branch_0x15D4:
     jal while_dma_busy
 branch_0x1620:
     lqv v28[0], 16(r22)
-    beq $7, $0, branch_0x1660
+    beq $7, $zero, branch_0x1660
     lqv v27[0], 32(r22)
     sqv v26[0], 48($20)
     lqv v29[0], 0(r22)
@@ -497,16 +497,16 @@ branch_0x1644:
     li $1, 992
     li $2, 1056
     j branch_0x1684
-    lh $31, 190($0)
+    lh $31, 190($zero)
 branch_0x1654:
     lqv v26[0], 48(r22)
     j branch_0x1620
     li $20, 1056
 branch_0x1660:
     la $3, 3552
-    addu $1, $0, $22
+    addu $1, $zero, $22
     jal branch_0x1684
-    addu $2, $0, $20
+    addu $2, $zero, $20
     sqv v6[0], 48($20)
     sqv v5[0], 16($20)
     lqv v27[0], 0(r3)
@@ -587,28 +587,28 @@ branch_0x1724:
     sb $2, 0($29)
 branch_0x1790:
     jal branch_0x110C
-    add $19, $24, $0
-    add $26, $19, $0
+    add $19, $24, $zero
+    add $26, $19, $zero
     j branch_0x109C
     addi $28, $27, 0
     nop
     branch_0x17A8:
-    ori $30, $0, 16
-    beq $0, $0, branch_0x10F0
-    lh $21, 256($0)
+    ori $30, $zero, 16
+    beq $zero, $zero, branch_0x10F0
+    lh $21, 256($zero)
 branch_0x17B4:
-    ori $30, $0, 24
-    beq $0, $0, branch_0x10F0
-    lh $21, 160($0)
+    ori $30, $zero, 24
+    beq $zero, $zero, branch_0x10F0
+    lh $21, 160($zero)
 task_init:
-    ori $2, $0, 10240
+    ori $2, $zero, 10240
     mtc0 $2, SP_STATUS
 branch_0x17C8:
     lqv v31[0], 48(r0)
     lqv v30[0], 64(r0)
-    lw $4, 4036($0)
+    lw $4, 4036($zero)
     andi $4, $4, 1
-    bne $4, $0, branch_0x18B4
+    bne $4, $zero, branch_0x18B4
     nop
     lw $23, 40($1)
     lw $3, 44($1)
@@ -616,12 +616,12 @@ branch_0x17C8:
     sw $3, 68($29)
     mfc0 $4, DPC_STATUS
     andi $4, $4, 1
-    bne $4, $0, wait_dpc_start_valid
+    bne $4, $zero, wait_dpc_start_valid
     mfc0 $4, DPC_END
     sub $23, $23, $4
     bgtz $23, wait_dpc_start_valid
     mfc0 $5, DPC_CURRENT
-    beq $5, $0, wait_dpc_start_valid
+    beq $5, $zero, wait_dpc_start_valid
     nop
 branch_0x1814:
     beq $5, $4, wait_dpc_start_valid
@@ -631,7 +631,7 @@ branch_0x1814:
 wait_dpc_start_valid:
     mfc0 $4, DPC_STATUS
     andi $4, $4, DPC_STATUS_START_VALID
-    bne $4, $0, wait_dpc_start_valid
+    bne $4, $zero, wait_dpc_start_valid
     li $4, 1
     mtc0 $4, DPC_STATUS
     mtc0 $3, DPC_START
@@ -640,18 +640,18 @@ branch_0x1840:
     sw $3, 24($29)
     li $23, 3296
     lw $5, 16($1)
-    lw $2, 8($0)
-    lw $3, 16($0)
-    lw $4, 24($0)
-    lw $6, 32($0)
+    lw $2, 8($zero)
+    lw $3, 16($zero)
+    lw $4, 24($zero)
+    lw $6, 32($zero)
     add $2, $2, $5
     add $3, $3, $5
     add $4, $4, $5
     add $6, $6, $5
-    sw $2, 8($0)
-    sw $3, 16($0)
-    sw $4, 24($0)
-    sw $6, 32($0)
+    sw $2, 8($zero)
+    sw $3, 16($zero)
+    sw $4, 24($zero)
+    sw $6, 32($zero)
     jal branch_0x10EC
     li $30, 8
     jal branch_0x10c8
@@ -662,18 +662,18 @@ branch_0x1840:
     sw $2, 36($29)
     add $2, $2, $3
     sw $2, 76($29)
-    lw $2, 65528($0)
-    sw $2, 264($0)
+    lw $2, 65528($zero)
+    sw $2, 264($zero)
     j 0x4001058
     nop
 branch_0x18B4:
     jal branch_0x10EC
     li $30, 8
-    lw $23, 3056($0)
-    lw $28, 3044($0)
-    lw $27, 3048($0)
+    lw $23, 3056($zero)
+    lw $28, 3044($zero)
+    lw $27, 3048($zero)
     j branch_0x109C
-    lw $26, 3052($0)
+    lw $26, 3052($zero)
     .fill 176, 0
 branch_0x1980:
     .fill 72, 0
@@ -685,10 +685,10 @@ branch_0x19C8:
     or $11, $11, $8
     and $12, $12, $9
     andi $12, $12, 28784
-    bne $12, $0, branch_0x1FA4
+    bne $12, $zero, branch_0x1FA4
     or $11, $11, $9
     andi $11, $11, 17219
-    bne $11, $0, branch_0x17A8
+    bne $11, $zero, branch_0x17A8
     llv v13[0], 24(r1)
     llv v14[0], 24(r2)
     llv v15[0], 24(r3)
@@ -713,11 +713,11 @@ branch_0x19C8:
     vreadacc v29, 0w
     sll $15, $13, 18
     mfc2 $17, v16[0]
-    sh $1, 3040($0)
-    sh $2, 3042($0)
+    sh $1, 3040($zero)
+    sh $2, 3042($zero)
     and $15, $17, $15
     bltz $15, branch_0x1FA0
-    sh $3, 3044($0)
+    sh $3, 3044($zero)
     slt $7, $11, $10
     slt $12, $10, $9
     add $7, $7, $7
@@ -739,11 +739,11 @@ branch_0x19C8:
     vsubc v28, v31, v28
     vsub v29, v31, v29
 branch_0x1AB8:
-    beq $17, $0, branch_0x1FA4
+    beq $17, $zero, branch_0x1FA4
     vsub v4, v15, v14
     sll $14, $13, 19
     vsub v10, v14, v13
-    nor $14, $14, $0
+    nor $14, $14, $zero
     vsub v9, v15, v13
     or $14, $17, $14
     vmov v29[3], v29[0]
@@ -1099,31 +1099,31 @@ branch_0x1FA4:
     andi $18, $25, 1023
     li $22, 2784
     jal branch_0x110C
-    add $19, $24, $0
-    beq $0, $0, branch_0x2054
-    sh $31, 344($0)
+    add $19, $24, $zero
+    beq $zero, $zero, branch_0x2054
+    sh $31, 344($zero)
 branch_0x2040:
     nop
     nop
-    ori $30, $0, 24
-    beq $0, $0, branch_0x1980
-    lh $21, 160($0)
+    ori $30, $zero, 24
+    beq $zero, $zero, branch_0x1980
+    lh $21, 160($zero)
 branch_0x2054:
-    sh $3, 3136($0)
-    sh $2, 3138($0)
-    sh $1, 3140($0)
-    sh $0, 3142($0)
-    ori $7, $0, 3512
-    ori $30, $0, 3136
-    ori $6, $0, 12
+    sh $3, 3136($zero)
+    sh $2, 3138($zero)
+    sh $1, 3140($zero)
+    sh $zero, 3142($zero)
+    ori $7, $zero, 3512
+    ori $30, $zero, 3136
+    ori $6, $zero, 12
     or $5, $30, $30
     xori $30, $30, 20
 branch_0x2078:
-    beq $6, $0, branch_0x2224
+    beq $6, $zero, branch_0x2224
     lh $11, 166($6)
     addi $6, $6, 65534
-    move $17, $0
-    or $18, $0, $0
+    move $17, $zero
+    or $18, $zero, $zero
     move $2, $5
     j branch_0x1814
     addi $14, $30, 2
@@ -1131,17 +1131,17 @@ branch_0x2098:
     and $8, $8, $11
     beq $8, $18, branch_0x20D4
     addi $2, $2, 2
-    or $20, $10, $0
+    or $20, $10, $zero
     sh $10, 0($14)
     addi $14, $14, 2
 branch_0x20B0:
     lh $10, 0($2)
-    bne $10, $0, branch_0x2098
+    bne $10, $zero, branch_0x2098
     lh $8, 36($10)
     addi $8, $17, 65534
     bgtz $8, branch_0x20B0
     move $2, $5
-    beq $8, $0, branch_0x2078
+    beq $8, $zero, branch_0x2078
     nop
     jr $24
 branch_0x20D4:
@@ -1149,16 +1149,16 @@ branch_0x20D4:
     lh $8, 246($17)
     addi $17, $17, 2
     jr $8
-    lh $8, 258($0)
+    lh $8, 258($zero)
     mtc2 $10, v13
-    or $10, $20, $0
+    or $10, $20, $zero
     mfc2 $20, v13[0]
     move $14, $30
-    lh $8, 248($0)
-    sh $8, 262($0)
+    lh $8, 248($zero)
+    sh $8, 262($zero)
     addi $7, $7, 40
     sh $7, 0($14)
-    sh $0, 2($14)
+    sh $zero, 2($14)
     ldv v9[0], 0(r10)
     ldv v10[0], 8(r10)
     ldv v4[0], 0(r20)
@@ -1229,25 +1229,25 @@ branch_0x2174:
     lw $15, 0($7)
     mfc2 $10, v13[0]
     j branch_0x149C
-    ori $9, $0, 1
+    ori $9, $zero, 1
 branch_0x2224:
     lh $8, 0($5)
-    sh $5, 262($0)
+    sh $5, 262($zero)
     addi $30, $24, 0
-    lh $24, 254($0)
-    sh $8, 180($0)
-    lh $8, 262($0)
-    lh $3, 180($0)
+    lh $24, 254($zero)
+    sh $8, 180($zero)
+    lh $8, 262($zero)
+    lh $3, 180($zero)
     lh $2, 2($8)
     lh $1, 4($8)
     addi $8, $8, 2
-    bne $1, $0, branch_0x2284
-    sh $8, 262($0)
+    bne $1, $zero, branch_0x2284
+    sh $8, 262($zero)
     jalr $30, $31
-    ori $30, $0, 16
-    beq $0, $0, branch_0x1BA0
-    lh $21, 256($0)
-    lw $1, 300($0)
+    ori $30, $zero, 16
+    beq $zero, $zero, branch_0x1BA0
+    lh $21, 256($zero)
+    lw $1, 300($zero)
     sw $15, 0($7)
     sw $16, 4($7)
     bltz $1, branch_0x22FC
@@ -1272,13 +1272,13 @@ branch_0x2284:
     sb $15, 3($7)
     sb $16, 7($7)
     lw $15, 0($7)
-    beq $8, $0, branch_0x1F48
+    beq $8, $zero, branch_0x1F48
     lw $16, 4($7)
     andi $8, $3, 8
     lpv v7[0], 144(r29)
     ldv v6[0], 160(r0)
     vmadn v20, v7, v20[0h]
-    beq $8, $0, branch_0x22F4
+    beq $8, $zero, branch_0x22F4
     vmadm v18, v31, v31[0w]
     vmulf v7, v18, v18
     vmulf v7, v7, v18
@@ -1290,10 +1290,10 @@ branch_0x22F4:
     vadd v18, v18, v31[4w]
 branch_0x22FC:
     andi $1, $1, 4095
-    sw $1, 300($0)
+    sw $1, 300($zero)
     jal branch_0x1724
     li $8, 992
-    ori $8, $0, 3552
+    ori $8, $zero, 3552
     stv v8[2], 16($8)
     stv v8[4], 32($8)
     stv v8[12], 48($8)
@@ -1349,33 +1349,33 @@ branch_0x2348:
     bgtz $1, branch_0x2348
     addi $1, $1, 65504
     j branch_0x1710
-    lh $31, 160($0)
+    lh $31, 160($zero)
     nop
     j branch_0x17C8
     nop
     nop
     jal while_dma_busy
-    ori $2, $0, 16384
+    ori $2, $zero, 16384
     mtc0 $2, SP_STATUS
     break
     nop
-    ori $2, $0, 4096
-    sw $28, 3044($0)
-    sw $27, 3048($0)
-    sw $26, 3052($0)
-    sw $23, 3056($0)
-    lw $19, 264($0)
-    move $20, $0
-    ori $18, $0, 3071
+    ori $2, $zero, 4096
+    sw $28, 3044($zero)
+    sw $27, 3048($zero)
+    sw $26, 3052($zero)
+    sw $23, 3056($zero)
+    lw $19, 264($zero)
+    move $20, $zero
+    ori $18, $zero, 3071
     jal dma_read_write
-    ori $17, $0, 1
+    ori $17, $zero, 1
     jal while_dma_busy
     nop
     j branch_0x10BC
     mtc0 $2, SP_STATUS
     nop
     nop
-    la $0, 48879
+    la $zero, 48879
     nop
     nop
     nop
