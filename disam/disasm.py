@@ -27,4 +27,4 @@ def decode_opcode(asm_instruction:int):
 
 
 if __name__ == "__main__":
-    decodes("goal/F3DEX.bin")
+    decodes("goal/F3DLX.bin")
