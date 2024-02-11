@@ -9,15 +9,6 @@
     .error "armips 0.11 or newer is required"
 .endif
 
-// Arguments to mtx_multiply
-output_mtx  equ $18 // also dmaLen, also used by itself
-input_mtx_1 equ $19 // also dmemAddr and xfrmLtPtr
-input_mtx_0 equ $20 // also clipPolyWrite
-
-// Arguments to dma_read_write
-dmaLen   equ $18 // also output_mtx, also used by itself
-dmemAddr equ $19 // also input_mtx_1 and xfrmLtPtr
-// cmd_w1_dram   // used for all dma_read_write DRAM addresses, not just second word of command
 
 // Tweak the li and la macros so that the output matches
 .macro li, reg, imm
@@ -80,10 +71,26 @@ unklabel_0004:
 .ascii ID_STR
 .align
 
+cmd_w1_dram equ $19
+
+// Arguments to mtx_multiply
+output_mtx  equ $18
+input_mtx_1 equ $19
+input_mtx_0 equ $20
+
+// Arguments to dma_read_write
+dmaLen   equ $18
+dmemAddr equ $20 
+
+// Arguments to load_overlay_and_enter
+ovlTableEntry equ $11
+postOvlRA     equ $12
+
 .close // DATA_FILE
 .create CODE_FILE, 0x4001080
+// $11: ovlTableEntry, very common local
 start:
-    j branch_0x17c0
+    j task_init
     li $29, 272
     jal branch_0x113c
     add $20, $0, $22
@@ -122,7 +129,7 @@ branch_0x10F0:
     lh $18, 4($30)
     jal branch_0x113c
     lh $20, 6($30)
-    jal branch_0x112C
+    jal while_dma_busy
     nop
     jr $21
 branch_0x110C:
@@ -132,26 +139,26 @@ branch_0x110C:
     and $19, $19, $11
     add $13, $0, $12
     lw $12, 352($13)
-    jr $31
+    jr $ra
     add $19, $19, $12
-branch_0x112C:
-    mfc0 $11, $6
-    bne $11, $0, branch_0x112C
+while_dma_busy:
+    mfc0 ovlTableEntry, SP_DMA_BUSY
+    bnez ovlTableEntry, while_dma_busy
     nop
-    jr $31
+    jr $ra
 branch_0x113c:
     add $17, $0, $0
-branch_0x1140:
-    mfc0 $11, $5
-    bne $11, $0, branch_0x1140
+dma_read_write:
+    mfc0 $11, SP_DMA_FULL
+    bnez $11, dma_read_write
     nop
-    mtc0 $20, SP_MEM_ADDR
+    mtc0 dmemAddr, SP_MEM_ADDR
     bgtz $17, dma_write
-    mtc0 $19, $1
-    jr $31
+    mtc0 cmd_w1_dram, SP_DRAM_ADDR
+    jr $ra
     mtc0 dmaLen, SP_RD_LEN
 dma_write:
-    jr $31
+    jr $ra
     mtc0 dmaLen, SP_WR_LEN
 branch_0x1168:
     add $21, $0, $31
@@ -165,15 +172,15 @@ branch_0x1168:
 branch_0x1188:
     mfc0 $20, DPC_STATUS
     andi $20, $20, DPC_STATUS_START_VALID
-    bne $20, $0, branch_0x1188
+    bnez $20, branch_0x1188
 branch_0x1194:
-    mfc0 $23, $10
+    mfc0 $23, DPC_CURRENT
     lw $19, 64($29)
     beq $23, $19, branch_0x1194
     nop
-    mtc0 $19, $8
+    mtc0 $19, DPC_START
 branch_0x11A8:
-    mfc0 $23, $10
+    mfc0 $23, DPC_CURRENT
     sub $20, $19, $23
     bgez $20, branch_0x11C4
     add $20, $19, $18
@@ -184,11 +191,11 @@ branch_0x11C4:
     add $23, $19, $18
     addi $18, $18, 65535
     li $20, 3296
-    jal branch_0x1140
+    jal dma_read_write
     li $17, 1
-    jal branch_0x112C
+    jal while_dma_busy
     sw $23, 24($29)
-    mtc0 $23, $9
+    mtc0 $23, DPC_END
 branch_0x11E4:
     jr $21
     li $23, 3296
@@ -207,7 +214,7 @@ branch_0x1210:
     lhu $1, 796($1)
     lhu $2, 796($2)
     lhu $3, 796($3)
-    jr $31
+    jr $ra
     addi $4, $1, 0
     jal branch_0x1200
     addi $24, $31, 0
@@ -257,7 +264,7 @@ branch_0x1294:
     addi $19, $19, 65472
     jal branch_0x113c
     li $18, 63
-    jal branch_0x112C
+    jal while_dma_busy
     li $3, 1120
     j branch_0x1644
     sw $19, 36($29)
@@ -342,7 +349,7 @@ branch_0x13FC:
     j branch_0x10AC
     andi $2, $2, 510
     lh $2, 196($2)
-    jal branch_0x112C
+    jal while_dma_busy
     lbu $1, 65529($27)
     jr $2
     andi $6, $1, 15
@@ -472,9 +479,9 @@ branch_0x15D4:
     addi $1, $19, 64
     beq $19, $8, branch_0x1620
     li $12, 63
-    jal branch_0x1140
+    jal dma_read_write
     sw $1, 36($29)
-    jal branch_0x112C
+    jal while_dma_busy
 branch_0x1620:
     lqv v28[0], 16(r22)
     beq $7, $0, branch_0x1660
@@ -531,7 +538,7 @@ branch_0x1690:
     sqv v6[0], 32($3)
     bne $3, $19, branch_0x1688
     addi $3, $3, 16
-    jr $31
+    jr $ra
     nop
 branch_0x16E8:
     li $8, 896
@@ -542,7 +549,7 @@ branch_0x16E8:
     ldv v1[0], 8(r8)
     ldv v0[8], 0(r8)
     ldv v1[8], 8(r8)
-    jr $31
+    jr $ra
     vmudh v0, v0, v3
 branch_0x1710:
     li $8, 1120
@@ -562,7 +569,7 @@ branch_0x1724:
     ldv v10[8], 16(r8)
     ldv v12[8], 32(r8)
     ldv v13[8], 40(r8)
-    jr $31
+    jr $ra
     ldv v14[8], 48(r8)
     lqv v0[0], 0(r22)
     lh $5, 624($1)
@@ -593,9 +600,9 @@ branch_0x17B4:
     ori $30, $0, 24
     beq $0, $0, branch_0x10F0
     lh $21, 160($0)
-branch_0x17C0:
+task_init:
     ori $2, $0, 10240
-    mtc0 $2, $4
+    mtc0 $2, SP_STATUS
 branch_0x17C8:
     lqv v31[0], 48(r0)
     lqv v30[0], 64(r0)
@@ -610,10 +617,10 @@ branch_0x17C8:
     mfc0 $4, DPC_STATUS
     andi $4, $4, 1
     bne $4, $0, wait_dpc_start_valid
-    mfc0 $4, $9
+    mfc0 $4, DPC_END
     sub $23, $23, $4
     bgtz $23, wait_dpc_start_valid
-    mfc0 $5, $10
+    mfc0 $5, DPC_CURRENT
     beq $5, $0, wait_dpc_start_valid
     nop
 branch_0x1814:
@@ -1079,9 +1086,9 @@ branch_0x1FA4:
     vmadm v23, v27, v24
     vmadn v26, v26, v25
     vmadh v27, v27, v25
-    jr $31
+    jr $ra
     nop
-    jal branch_0x112C
+    jal while_dma_busy
     li $27, 2464
     lw $25, 0($27)
     lw $24, 4($27)
@@ -1347,9 +1354,9 @@ branch_0x2348:
     j branch_0x17C8
     nop
     nop
-    jal branch_0x112C
+    jal while_dma_busy
     ori $2, $0, 16384
-    mtc0 $2, $4
+    mtc0 $2, SP_STATUS
     break
     nop
     ori $2, $0, 4096
@@ -1360,12 +1367,12 @@ branch_0x2348:
     lw $19, 264($0)
     move $20, $0
     ori $18, $0, 3071
-    jal branch_0x1140
+    jal dma_read_write
     ori $17, $0, 1
-    jal branch_0x112C
+    jal while_dma_busy
     nop
     j branch_0x10BC
-    mtc0 $2, $4
+    mtc0 $2, SP_STATUS
     nop
     nop
     la $0, 48879
