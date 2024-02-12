@@ -2,6 +2,7 @@
 
 .include "rsp/rsp_defs.inc"
 .include "rsp/gbi.inc"
+.include "rsp/macros.inc"
 
 // This file assumes DATA_FILE and CODE_FILE are set on the command line
 
@@ -9,67 +10,138 @@
     .error "armips 0.11 or newer is required"
 .endif
 
-
-// Tweak the li and la macros so that the output matches
-.macro li, reg, imm
-    addi reg, $zero, imm
-.endmacro
-
-.macro la, reg, imm
-    addiu reg, $zero, imm
-.endmacro
-
-.macro move, dst, src
-    ori dst, src, 0
-.endmacro
-
-// Prohibit macros involving slt; this silently clobbers $1. You can of course
-// manually write the slt and branch instructions if you want this behavior.
-.macro blt, ra, rb, lbl
-    .error "blt is a macro using slt, and silently clobbers $1!"
-.endmacro
-
-.macro bgt, ra, rb, lbl
-    .error "bgt is a macro using slt, and silently clobbers $1!"
-.endmacro
-
-.macro ble, ra, rb, lbl
-    .error "ble is a macro using slt, and silently clobbers $1!"
-.endmacro
-
-.macro bge, ra, rb, lbl
-    .error "bge is a macro using slt, and silently clobbers $1!"
-.endmacro
-
-// Vector macros
-.macro vcopy, dst, src
-    vadd dst, src, $v0[0]
-.endmacro
-
-.macro vclr, dst
-    vxor dst, dst, dst
-.endmacro
-
-ACC_UPPER equ 0
-ACC_MIDDLE equ 1
-ACC_LOWER equ 2
-.macro vreadacc, dst, N
-    vsar dst, dst, dst[N]
-.endmacro
-
 // RSP DMEM
 .create DATA_FILE, 0x0000
-// 0x0000-0x0004
-unklabel_0000:
-    .fill 4
-
-// 0x0004-0x0009
-unklabel_0004:
-    .byte 0x0F, 0x2F, 0x10, 0x80, 0x00, 0x00
-
-// 0x02b0-0x02f0
+.fill 4, 0
+/* 0x4 */ .dw 0x0f2f1080
+/* 0x8 */ .dw 0x00000f30
+/* 0xc */ .dw 0x00871000
+/* 0x10 */ .dw 0x00000fb8
+/* 0x14 */ .dw 0x021f17a8
+/* 0x18 */ .dw 0x000011d8
+/* 0x1c */ .dw 0x019717a8
+/* 0x20 */ .dw 0x00001370
+/* 0x24 */ .dw 0x006717a8
+/* 0x28 */ .dw 0x0ffaf006
+/* 0x2c */ .dw 0x7fff0000
+/* 0x30 */ .dw 0x00000001
+/* 0x34 */ .dw 0x0002ffff
+/* 0x38 */ .dw 0x40000004
+/* 0x3c */ .dw 0x06330200
+/* 0x40 */ .dw 0x7ffffff8
+/* 0x44 */ .dw 0x00080040
+/* 0x48 */ .dw 0x00208000
+/* 0x4c */ .dw 0x01cccccc
+/* 0x50 */ .dw 0x0001ffff
+/* 0x54 */ .dw 0x00010001
+/* 0x58 */ .dw 0x0001ffff
+/* 0x5c */ .dw 0x00010001
+/* 0x60 */ .dw 0x00020002
+/* 0x64 */ .dw 0x00020002
+/* 0x68 */ .dw 0x00020002
+/* 0x6c */ .dw 0x00020002
+/* 0x70 */ .dw 0x00010000
+/* 0x74 */ .dw 0x00000001
+/* 0x78 */ .dw 0x00000001
+/* 0x7c */ .dw 0x00000001
+/* 0x80 */ .dw 0x00010000
+/* 0x84 */ .dw 0x0000ffff
+/* 0x88 */ .dw 0x00000001
+/* 0x8c */ .dw 0x0000ffff
+.fill 4, 0
+/* 0x94 */ .dw 0x0001ffff
+.fill 4, 0
+/* 0x9c */ .dw 0x00010001
+/* 0xa0 */ .dw 0x17b47fff
+/* 0xa4 */ .dw 0x571d3a0c
+/* 0xa8 */ .dw 0x00010002
+/* 0xac */ .dw 0x01000200
+/* 0xb0 */ .dw 0x40000040
+/* 0xb4 */ .dw 0x000017b0
+/* 0xb8 */ .dw 0x00ffffff
+/* 0xbc */ .dw 0x1418109c
+/* 0xc0 */ .dw 0x11ec13e0
+/* 0xc4 */ .dw 0x109c15dc
+/* 0xc8 */ .dw 0x109c1758
+/* 0xcc */ .dw 0x1430109c
+/* 0xd0 */ .dw 0x1768109c
+/* 0xd4 */ .dw 0x109c109c
+/* 0xd8 */ .dw 0x122413d8
+/* 0xdc */ .dw 0x13d013c8
+/* 0xe0 */ .dw 0x124413b4
+/* 0xe4 */ .dw 0x13a41384
+/* 0xe8 */ .dw 0x132c1324
+/* 0xec */ .dw 0x130012e8
+/* 0xf0 */ .dw 0x12b41368
+/* 0xf4 */ .dw 0x11fc17fc
+/* 0xf8 */ .dw 0x18001858
+/* 0xfc */ .dw 0x186c19a8
+/* 0x100 */ .dw 0x17c417e0
+/* 0x104 */ .dw 0x10580000
+.fill 8, 0
+/* 0x110 */ .dw 0x0000ffff
+.fill 4, 0
+/* 0x118 */ .dw 0xef080cff
+.fill 16, 0
+/* 0x12c */ .dw 0x80000040
+.fill 8, 0
+/* 0x138 */ .dw 0x40004000
+.fill 100, 0
+/* 0x1a0 */ .dw 0x80000000
+/* 0x1a4 */ .dw 0x80000000
+.fill 8, 0
+/* 0x1b0 */ .dw 0x00800000
+/* 0x1b4 */ .dw 0x00800000
+/* 0x1b8 */ .dw 0x7f000000
+.fill 28, 0
+/* 0x1d8 */ .dw 0x007f0000
+.fill 44, 0
+/* 0x208 */ .dw 0xe0011fff
+/* 0x20c */ .dw 0x00040000
+/* 0x210 */ .dw 0xff000000
+/* 0x214 */ .dw 0xff000000
+.fill 152, 0
 .ascii ID_STR
-.align
+.align 
+/* 0x2f0 */ .dw 0x038001b0
+/* 0x2f4 */ .dw 0x01d001f0
+/* 0x2f8 */ .dw 0x02100230
+/* 0x2fc */ .dw 0x02500270
+/* 0x300 */ .dw 0x029002b0
+/* 0x304 */ .dw 0x02d00138
+/* 0x308 */ .dw 0x04700480
+/* 0x30c */ .dw 0x04900460
+/* 0x310 */ .dw 0x012c0070
+/* 0x314 */ .dw 0x01600390
+/* 0x318 */ .dw 0x01f004a0
+/* 0x31c */ .dw 0x04a004c8
+/* 0x320 */ .dw 0x04f00518
+/* 0x324 */ .dw 0x05400568
+/* 0x328 */ .dw 0x059005b8
+/* 0x32c */ .dw 0x05e00608
+/* 0x330 */ .dw 0x06300658
+/* 0x334 */ .dw 0x068006a8
+/* 0x338 */ .dw 0x06d006f8
+/* 0x33c */ .dw 0x07200748
+/* 0x340 */ .dw 0x07700798
+/* 0x344 */ .dw 0x07c007e8
+/* 0x348 */ .dw 0x08100838
+/* 0x34c */ .dw 0x08600888
+/* 0x350 */ .dw 0x08b008d8
+/* 0x354 */ .dw 0x09000928
+/* 0x358 */ .dw 0x09500978
+.fill 4, 0
+/* 0x360 */ .dw 0x04040004
+/* 0x364 */ .dw 0x02020002
+/* 0x368 */ .dw 0x02040000
+/* 0x36c */ .dw 0x04020000
+/* 0x370 */ .dw 0x02020400
+/* 0x374 */ .dw 0x04000000
+/* 0x378 */ .dw 0x01000101
+.fill 20, 0
+/* 0x390 */ .dw 0x01000000
+/* 0x394 */ .dw 0x00ff19c8
+.fill 1128, 0
 .close // DATA_FILE
 cmd_w1_dram equ $19
 
