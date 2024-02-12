@@ -38,7 +38,7 @@ ALL_OPTIONS := \
   BUG_WRONG_INIT_VZERO \
   BUG_FAIL_IF_CARRY_SET_AT_INIT
   
-ARMIPS ?= ./armips
+ARMIPS ?= ./armips/build/armips
 PARENT_OUTPUT_DIR ?= ./build
 ifeq ($(PARENT_OUTPUT_DIR),.)
   $(error Cannot build directly in repo directory; see Makefile for details.)

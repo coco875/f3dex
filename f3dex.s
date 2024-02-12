@@ -70,7 +70,7 @@ unklabel_0004:
 // 0x02b0-0x02f0
 .ascii ID_STR
 .align
-
+.close // DATA_FILE
 cmd_w1_dram equ $19
 
 // Arguments to mtx_multiply
@@ -86,7 +86,6 @@ dmemAddr equ $20
 ovlTableEntry equ $11
 postOvlRA     equ $12
 
-.close // DATA_FILE
 .create CODE_FILE, 0x4001080
 // $11: ovlTableEntry, very common local
 start:
