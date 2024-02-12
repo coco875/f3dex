@@ -1,0 +1,6 @@
+[submodule "tools/armips"]
+	path = tools/armips
+	url = https://github.com/Kingcom/armips.git
+[submodule "tools/asm-differ"]
+	path = tools/asm-differ
+	url = https://github.com/simonlindholm/asm-differ.git

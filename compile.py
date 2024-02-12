@@ -15,7 +15,7 @@ def check(file, out):
     else:
         return False
 
-armips = "./armips/build/armips"
+armips = "./tools/armips/build/armips"
 id_str = "RSP Gfx ucode F3DEX         0.95 Yoshitaka Yasumoto Nintendo."
 version = "F3DEX"
 output = f"./build/{version}"
