@@ -18,4 +18,5 @@ def show_first_diff(file1, file2):
             print(f"First difference at address 0x{address:08X}")
             return
 
+show_first_diff("./build/F3DEX/F3DEX.code", "./goal/F3DEX.bin")
 show_first_diff("./build/F3DEX/F3DEX.data", "./goal/F3DEX_data.bin")
