@@ -60,7 +60,7 @@ v30Value:
 .fill 4, 0
 /* 0x9c */ .dw 0x00010001
 D_0X00AO:
-/* 0xa0 */ .dh .L040017B4 & 0xffff
+/* 0xa0 */ jumpTableEntry .L040017B4
 /* 0xa2 */ .dh 0x7fff
 /* 0xa4 */ .dw 0x571d3a0c
 /* 0xa8 */ .dw 0x00010002
@@ -68,30 +68,51 @@ D_0X00AO:
 /* 0xb0 */ .dw 0x40000040
 /* 0xb4 */ .dh 0x0000
 D_0x00B6:
-/* 0xb6 */ .dh .L040017B4-4 & 0xffff
+/* 0xb6 */ jumpTableEntry .L040017B4-4
 lower24Mask:
 /* 0xb8 */ .dw 0x00ffffff
-/* 0xbc */ .dw 0x1418109c
-/* 0xc0 */ .dw 0x11ec13e0
-/* 0xc4 */ .dw 0x109c15dc
-/* 0xc8 */ .dw 0x109c1758
-/* 0xcc */ .dw 0x1430109c
-/* 0xd0 */ .dw 0x1768109c
-/* 0xd4 */ .dw 0x109c109c
-/* 0xd8 */ .dw 0x122413d8
-/* 0xdc */ .dw 0x13d013c8
-/* 0xe0 */ .dw 0x124413b4
-/* 0xe4 */ .dw 0x13a41384
-/* 0xe8 */ .dw 0x132c1324
-/* 0xec */ .dw 0x130012e8
-/* 0xf0 */ .dw 0x12b41368
-/* 0xf4 */ .dw 0x11fc17fc
-/* 0xf8 */ .dw 0x18001858
-/* 0xfc */ .dw 0x186c19a8
+operationJumpTable:
+/* 0xbc */ jumpTableEntry dispatch_dma        // 0x00
+/* 0xbe */ jumpTableEntry run_next_DL_command // 0x01
+/* 0xc0 */ jumpTableEntry dispatch_imm        // 0x02
+/* 0xc2 */ jumpTableEntry dispatch_rdp        // 0x03
+dmaJumpTable:
+/* 0xc4 */ jumpTableEntry run_next_DL_command // 0x00
+/* 0xc6 */ .dh 0x15dc
+/* 0xc8 */ jumpTableEntry run_next_DL_command
+/* 0xca */ .dh 0x1758
+/* 0xcc */ .dh 0x1430
+/* 0xce */ jumpTableEntry run_next_DL_command
+/* 0xd0 */ .dh 0x1768
+/* 0xd2 */ jumpTableEntry run_next_DL_command
+/* 0xd4 */ jumpTableEntry run_next_DL_command
+/* 0xd6 */ jumpTableEntry run_next_DL_command
+/* 0xd8 */ .dh 0x1224
+/* 0xda */ .dh 0x13d8
+/* 0xdc */ .dh 0x13d0
+/* 0xde */ .dh 0x13c8
+/* 0xe0 */ .dh 0x1244
+/* 0xe2 */ .dh 0x13b4
+/* 0xe4 */ .dh 0x13a4
+/* 0xe6 */ .dh 0x1384
+/* 0xe8 */ .dh 0x132c
+/* 0xea */ .dh 0x1324
+/* 0xec */ .dh 0x1300
+/* 0xee */ .dh 0x12e8
+/* 0xf0 */ .dh 0x12b4
+/* 0xf2 */ .dh 0x1368
+/* 0xf4 */ .dh 0x11fc
+/* 0xf6 */ .dh 0x17fc
+/* 0xf8 */ .dh 0x1800
+/* 0xfa */ .dh 0x1858
+/* 0xfc */ .dh 0x186c
+/* 0xfe */ .dh 0x19a8
 D_0x0100:
-/* 0x100 */ .dh .L040017C8-4 & 0xffff
+/* 0x100 */ jumpTableEntry .L040017C8-4
 /* 0X102 */ .dh 0x17e0
-/* 0x104 */ .dw 0x10580000
+load_wait_for_dma_and_run_next_command:
+/* 0x104 */ jumpTableEntry wait_for_dma_and_run_next_command
+/* 0x106 */ .dh 0x0000
 .fill 8, 0
 /* 0x110 */ .dw 0x0000ffff
 .fill 4, 0
@@ -157,10 +178,15 @@ D_0x0100:
 /* 0x394 */ .dw 0x00ff19c8
 .fill 1128, 0
 .close // DATA_FILE
+
+// he continue after the overlay data
+inputBuffer equ 0x9A0
+inputBufferLen equ 0x13F
+
 // Must keep values during tri drawing.
 // They are also used throughout the codebase, but can be overwritten once their
 // use has been fulfilled for the specific command.
-cmd_w1_dram equ $19 // Command word 1, which is also DMA DRAM addr; almost global, occasionally used locally
+cmd_w1_dram equ $24 // Command word 1, which is also DMA DRAM addr; almost global, occasionally used locally
 cmd_w0      equ $25 // Command word 0; almost global, occasionally used locally
 
 // Arguments to mtx_multiply
@@ -176,51 +202,58 @@ dmemAddr equ $20
 ovlTableEntry equ $30
 postOvlRA     equ $12
 
+inputBufferPos equ $27
+
 .create CODE_FILE, 0x4001080
 // $11: very common local
 // $18: dmaLen
-// $19: cmd_w1_dram, local
+// $24: cmd_w1_dram, local
+// $25: cmd_w0
+// $27: inputBufferPos
 // $30: ovlTableEntry
 Overlay0Address:
 /* 000000 04001080 090005F0 */  j           start
 /* 000004 04001084 201D0110 */   li         $29, 0x110
 /* 000008 04001088 0D00044F */  jal         dma_read
-/* 00000C 0400108C 0016A020 */   add        $20, $zero, $22
-/* 000010 04001090 842200BC */  lh          $2, 0xBC($1)
+/* 00000C 0400108C 0016A020 */   add        dmemAddr, $zero, $22
+
+// need to be already shifted of one bit for halfword
+dispatch_task: 
+/* 000010 04001090 842200BC */  lh          $2, operationJumpTable($1)
 /* 000014 04001094 00400008 */  jr          $2
-/* 000018 04001098 001915C2 */   srl        $2, $25, 23
+/* 000018 04001098 001915C2 */   srl        $2, cmd_w0, 23             // select first 9 bits        
 run_next_DL_command:
 /* 00001C 0400109C 40022000 */  mfc0        $2, SP_STATUS
 /* 000020 040010A0 30420080 */  andi        $2, $2, SP_STATUS_SIG0
 /* 000024 040010A4 14400006 */  bnez        $2, .L040010C0
 /* 000028 040010A8 84150026 */   lh         $21, 0x26($zero)
 .L040010AC:
-/* 00002C 040010AC 179BFFED */  bne         $28, $27, 0x4001064
+/* 00002C 040010AC 179BFFED */  bne         $28, $27, .L04001064
 /* 000030 040010B0 8F790000 */   lw         $25, 0x0($27)
-/* 000034 040010B4 09000432 */  j           func_040010C8
-/* 000038 040010B8 841F0104 */   lh         $ra, 0x104($zero)
+/* 000034 040010B4 09000432 */  j           load_display_list_dma
+/* 000038 040010B8 841F0104 */   lh         $ra, load_wait_for_dma_and_run_next_command
 .L040010BC:
-/* 00003C 040010BC 841500B6 */  lh          $21, D_0x00B6($zero)
+/* 00003C 040010BC 841500B6 */  lh          $21, D_0x00B6
 .L040010C0:
 /* 000040 040010C0 0900043C */  j           load_overlay
 /* 000044 040010C4 341E0020 */   ori        ovlTableEntry, $zero, overlayInfo4
-func_040010C8:
+load_display_list_dma:
 /* 000048 040010C8 201C0AE0 */  li          $28, 0xAE0
 /* 00004C 040010CC 001FA820 */  add         $21, $zero, $ra
-/* 000050 040010D0 201409A0 */  li          $20, 0x9A0
+/* 000050 040010D0 201409A0 */  li          dmemAddr, inputBuffer
 /* 000054 040010D4 001A9820 */  add         $19, $zero, $26
 /* 000058 040010D8 235A0140 */  addi        $26, $26, 0x140
 /* 00005C 040010DC 0D00044F */  jal         dma_read
-/* 000060 040010E0 2012013F */   li         $18, 0x13F
+/* 000060 040010E0 2012013F */   li         dmaLen, inputBufferLen
 /* 000064 040010E4 02A00008 */  jr          $21
-/* 000068 040010E8 201B09A0 */   li         $27, 0x9A0
+/* 000068 040010E8 201B09A0 */   li         inputBufferPos, inputBuffer
 load_overlay_fcn:
 /* 00006C 040010EC 001FA820 */  add         $21, $zero, $ra
 load_overlay:
 /* 000070 040010F0 8FD30000 */  lw          $19, overlay_load(ovlTableEntry)
-/* 000074 040010F4 87D20004 */  lh          $18, overlay_len(ovlTableEntry)
+/* 000074 040010F4 87D20004 */  lh          dmaLen, overlay_len(ovlTableEntry)
 /* 000078 040010F8 0D00044F */  jal         dma_read
-/* 00007C 040010FC 87D40006 */   lh         $20, overlay_imem(ovlTableEntry)
+/* 00007C 040010FC 87D40006 */   lh         dmemAddr, overlay_imem(ovlTableEntry)
 /* 000080 04001100 0D00044B */  jal         while_wait_dma_busy
 /* 000084 04001104 00000000 */   nop
 /* 000088 04001108 02A00008 */  jr          $21
@@ -244,9 +277,9 @@ dma_read_write:
 /* 0000C0 04001140 400B2800 */  mfc0        $11, SP_DMA_FULL
 /* 0000C4 04001144 1560FFFE */  bnez        $11, dma_read_write
 /* 0000C8 04001148 00000000 */   nop
-/* 0000CC 0400114C 40940000 */  mtc0        $20, SP_MEM_ADDR
+/* 0000CC 0400114C 40940000 */  mtc0        dmemAddr, SP_MEM_ADDR
 /* 0000D0 04001150 1E200003 */  bgtz        $17, dma_write
-/* 0000D4 04001154 40930800 */   mtc0       cmd_w1_dram, SP_DRAM_ADDR
+/* 0000D4 04001154 40930800 */   mtc0       $19, SP_DRAM_ADDR
 /* 0000D8 04001158 03E00008 */  jr          $ra
 /* 0000DC 0400115C 40921000 */   mtc0       dmaLen, SP_RD_LEN
 dma_write:
@@ -281,8 +314,8 @@ func_04001168:
 /* 000140 040011C0 00000000 */   nop
 .L040011C4:
 /* 000144 040011C4 0272B820 */  add         $23, $19, $18
-/* 000148 040011C8 2252FFFF */  addi        $18, $18, -0x1
-/* 00014C 040011CC 20140CE0 */  li          $20, 0xCE0
+/* 000148 040011C8 2252FFFF */  addi        dmaLen, $18, -0x1
+/* 00014C 040011CC 20140CE0 */  li          dmemAddr, 0xCE0
 /* 000150 040011D0 0D000450 */  jal         dma_read_write
 /* 000154 040011D4 20110001 */   li         $17, 0x1
 /* 000158 040011D8 0D00044B */  jal         while_wait_dma_busy
@@ -291,6 +324,7 @@ func_04001168:
 .L040011E4:
 /* 000164 040011E4 02A00008 */  jr          $21
 /* 000168 040011E8 20170CE0 */   li         $23, 0xCE0
+dispatch_imm:
 /* 00016C 040011EC 304200FE */  andi        $2, $2, 0xFE
 /* 000170 040011F0 84420076 */  lh          $2, 0x76($2)
 /* 000174 040011F4 00400008 */  jr          $2
@@ -355,7 +389,7 @@ func_04001204:
 /* 000248 040012C8 0461FF74 */  bgez        $3, run_next_DL_command
 /* 00024C 040012CC 2273FFC0 */   addi       $19, $19, -0x40
 /* 000250 040012D0 0D00044F */  jal         dma_read
-/* 000254 040012D4 2012003F */   li         $18, 0x3F
+/* 000254 040012D4 2012003F */   li         dmaLen, 0x3F
 /* 000258 040012D8 0D00044B */  jal         while_wait_dma_busy
 /* 00025C 040012DC 20030460 */   li         $3, 0x460
 /* 000260 040012E0 09000591 */  j           .L04001644
@@ -424,6 +458,7 @@ func_04001204:
 /* 000354 040013D4 AFB8FFFC */   sw         $24, -0x4($29)
 /* 000358 040013D8 090004FF */  j           .L040013FC
 /* 00035C 040013DC 8FB9FFFC */   lw         $25, -0x4($29)
+dispatch_rdp:
 /* 000360 040013E0 00191603 */  sra         $2, $25, 24
 /* 000364 040013E4 20420003 */  addi        $2, $2, 0x3
 /* 000368 040013E8 04400004 */  bltz        $2, .L040013FC
@@ -439,8 +474,10 @@ func_04001204:
 /* 00038C 0400140C 1C40FF23 */  bgtz        $2, run_next_DL_command
 /* 000390 04001410 00000000 */   nop
 /* 000394 04001414 0900042B */  j           .L040010AC
-/* 000398 04001418 304201FE */   andi       $2, $2, 0x1FE
-/* 00039C 0400141C 844200C4 */  lh          $2, 0xC4($2)
+dispatch_dma:
+/* 000398 04001418 304201FE */   andi       $2, $2, 0x1FE        // mask the 9th bit
+// here $9 contains the 2-8 bit multiplied by 2
+/* 00039C 0400141C 844200C4 */  lh          $2, dmaJumpTable($2)
 /* 0003A0 04001420 0D00044B */  jal         while_wait_dma_busy
 /* 0003A4 04001424 9361FFF9 */   lbu        $1, -0x7($27)
 /* 0003A8 04001428 00400008 */  jr          $2
@@ -719,7 +756,7 @@ start:
 .L04001814:
 /* 000794 04001814 10A40003 */  beq         $5, $4, wait_dpc_start_valid
 /* 000798 04001818 00000000 */   nop
-/* 00079C 0400181C 09000610 */  j           .L04001840
+/* 00079C 0400181C 09000610 */  j           calculate_overlay_addrs
 /* 0007A0 04001820 34830000 */   ori        $3, $4, 0x0
 wait_dpc_start_valid:
 /* 0007A4 04001824 40045800 */  mfc0        $4, DPC_STATUS
@@ -729,25 +766,25 @@ wait_dpc_start_valid:
 /* 0007B4 04001834 40845800 */  mtc0        $4, DPC_STATUS
 /* 0007B8 04001838 40834000 */  mtc0        $3, DPC_START
 /* 0007BC 0400183C 40834800 */  mtc0        $3, DPC_END
-.L04001840:
+calculate_overlay_addrs:
 /* 0007C0 04001840 AFA30018 */  sw          $3, 0x18($29)
 /* 0007C4 04001844 20170CE0 */  li          $23, 0xCE0
-/* 0007C8 04001848 8C250010 */  lw          $5, 0x10($1)
-/* 0007CC 0400184C 8C020008 */  lw          $2, 0x8($zero)
-/* 0007D0 04001850 8C030010 */  lw          $3, 0x10($zero)
-/* 0007D4 04001854 8C040018 */  lw          $4, 0x18($zero)
-/* 0007D8 04001858 8C060020 */  lw          $6, 0x20($zero)
+/* 0007C8 04001848 8C250010 */  lw          $5, OSTask_ucode($1)
+/* 0007CC 0400184C 8C020008 */  lw          $2, overlayInfo1 + overlay_load
+/* 0007D0 04001850 8C030010 */  lw          $3, overlayInfo2 + overlay_load
+/* 0007D4 04001854 8C040018 */  lw          $4, overlayInfo3 + overlay_load
+/* 0007D8 04001858 8C060020 */  lw          $6, overlayInfo4 + overlay_load
 /* 0007DC 0400185C 00451020 */  add         $2, $2, $5
 /* 0007E0 04001860 00651820 */  add         $3, $3, $5
 /* 0007E4 04001864 00852020 */  add         $4, $4, $5
 /* 0007E8 04001868 00C53020 */  add         $6, $6, $5
-/* 0007EC 0400186C AC020008 */  sw          $2, 0x8($zero)
-/* 0007F0 04001870 AC030010 */  sw          $3, 0x10($zero)
-/* 0007F4 04001874 AC040018 */  sw          $4, 0x18($zero)
-/* 0007F8 04001878 AC060020 */  sw          $6, 0x20($zero)
+/* 0007EC 0400186C AC020008 */  sw          $2, overlayInfo1 + overlay_load
+/* 0007F0 04001870 AC030010 */  sw          $3, overlayInfo2 + overlay_load
+/* 0007F4 04001874 AC040018 */  sw          $4, overlayInfo3 + overlay_load
+/* 0007F8 04001878 AC060020 */  sw          $6, overlayInfo4 + overlay_load
 /* 0007FC 0400187C 0D00043B */  jal         load_overlay_fcn
 /* 000800 04001880 201E0008 */   li         ovlTableEntry, overlayInfo1
-/* 000804 04001884 0D000432 */  jal         func_040010C8
+/* 000804 04001884 0D000432 */  jal         load_display_list_dma
 /* 000808 04001888 8C3A0030 */   lw         $26, 0x30($1)
 /* 00080C 0400188C 8C220020 */  lw          $2, 0x20($1)
 /* 000810 04001890 8C230024 */  lw          $3, 0x24($1)
@@ -757,7 +794,7 @@ wait_dpc_start_valid:
 /* 000820 040018A0 AFA2004C */  sw          $2, 0x4C($29)
 /* 000824 040018A4 8C02FFF8 */  lw          $2, -0x8($zero)
 /* 000828 040018A8 AC020108 */  sw          $2, 0x108($zero)
-/* 00082C 040018AC 09000416 */  j           func_04001058
+/* 00082C 040018AC 09000416 */  j           wait_for_dma_and_run_next_command
 /* 000830 040018B0 00000000 */   nop
 .L040018B4:
 /* 000834 040018B4 0D00043B */  jal         load_overlay_fcn
@@ -1189,19 +1226,20 @@ Overlay1Address:
 /* 000F7C 0400104C 4A19DECF */  vmadh       $v27, $v27, $v25
 /* 000F80 04001050 03E00008 */  jr          $ra
 /* 000F84 04001054 00000000 */   nop
-func_04001058:
+wait_for_dma_and_run_next_command:
 /* 000F88 04001058 0D00044B */  jal         while_wait_dma_busy
-/* 000F8C 0400105C 201B09A0 */   li         $27, 0x9A0
-/* 000F90 04001060 8F790000 */  lw          $25, 0x0($27)
-/* 000F94 04001064 8F780004 */  lw          $24, 0x4($27)
-/* 000F98 04001068 00190F42 */  srl         $1, $25, 29
-/* 000F9C 0400106C 30210006 */  andi        $1, $1, 0x6
-/* 000FA0 04001070 237B0008 */  addi        $27, $27, 0x8
-/* 000FA4 04001074 1C200006 */  bgtz        $1, . + 28
-/* 000FA8 04001078 333203FF */   andi       $18, $25, 0x3FF
+/* 000F8C 0400105C 201B09A0 */   li         inputBufferPos, inputBuffer
+/* 000F90 04001060 8F790000 */  lw          cmd_w0, 0x0(inputBufferPos)
+.L04001064:
+/* 000F94 04001064 8F780004 */  lw          cmd_w1_dram, 0x4(inputBufferPos)
+/* 000F98 04001068 00190F42 */  srl         $1, cmd_w0, 29                      // get 3 first bits
+/* 000F9C 0400106C 30210006 */  andi        $1, $1, 0x6                         // mask out 3rd bit
+/* 000FA0 04001070 237B0008 */  addi        inputBufferPos, inputBufferPos, 0x8
+/* 000FA4 04001074 1C200006 */  bgtz        $1, dispatch_task
+/* 000FA8 04001078 333203FF */   andi       $18, cmd_w0, 0x3FF
 /* 000FAC 0400107C 20160AE0 */  li          $22, 0xAE0
 /* 000FB0 04001080 0D000443 */  jal         segmented_to_physical
-/* 000FB4 04001084 03009820 */   add        $19, $24, $zero
+/* 000FB4 04001084 03009820 */   add        $19, cmd_w1_dram, $zero
 Overlay1End:
 
 // Overlay 2
@@ -1213,7 +1251,7 @@ Overlay2Address:
 .L040017B0:
 /* 000FC0 040017B0 00000000 */  nop
 /* 000FC4 040017B4 00000000 */  nop
-/* 000FC8 040017B8 341E0018 */  ori         $30, $zero, 0x18
+/* 000FC8 040017B8 341E0018 */  ori         ovlTableEntry, $zero, overlayInfo3
 /* 000FCC 040017BC 1000FE4C */  b           load_overlay
 /* 000FD0 040017C0 841500A0 */   lh         $21, D_0X00AO($zero)
 .L040017C4:
@@ -1356,8 +1394,8 @@ Overlay2End:
 // Overlay 3
 .headersize 0x040017a8 - orga()
 Overlay3Address:
-/* 0011D8 040017A8 341E0010 */   ori        $30, $zero, 0x10
-/* 0011DC 040017AC 1000FE50 */  b           load_overlay //. - 0x6BC
+/* 0011D8 040017A8 341E0010 */   ori        ovlTableEntry, $zero, overlayInfo2
+/* 0011DC 040017AC 1000FE50 */  b           load_overlay
 /* 0011E0 040017B0 84150100 */   lh         $21, D_0x0100($zero)
 /* 0011E4 040017B4 8C01012C */  lw          $1, 0x12C($zero)
 /* 0011E8 040017B8 ACEF0000 */  sw          $15, 0x0($7)
@@ -1482,8 +1520,8 @@ Overlay4Address:
 /* 00139C 040017D4 AC1A0BEC */  sw          $26, 0xBEC($zero)
 /* 0013A0 040017D8 AC170BF0 */  sw          $23, 0xBF0($zero)
 /* 0013A4 040017DC 8C130108 */  lw          $19, 0x108($zero)
-/* 0013A8 040017E0 34140000 */  ori         $20, $zero, 0x0
-/* 0013AC 040017E4 34120BFF */  ori         $18, $zero, 0xBFF
+/* 0013A8 040017E0 34140000 */  ori         dmemAddr, $zero, 0x0
+/* 0013AC 040017E4 34120BFF */  ori         dmaLen, $zero, 0xBFF
 /* 0013B0 040017E8 0D000450 */  jal         dma_read_write
 /* 0013B4 040017EC 34110001 */   ori        $17, $zero, 0x1
 /* 0013B8 040017F0 0D00044B */  jal         while_wait_dma_busy
