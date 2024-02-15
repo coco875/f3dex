@@ -232,7 +232,7 @@ run_next_DL_command:
 /* 000028 040010A8 84150026 */   lh         $21, 0x26($zero)
 .L040010AC:
 /* 00002C 040010AC 179BFFED */  bne         $28, $27, .L04001064
-/* 000030 040010B0 8F790000 */   lw         $25, 0x0($27)
+/* 000030 040010B0 8F790000 */   lw         cmd_w0, 0x0(inputBufferPos)
 /* 000034 040010B4 09000432 */  j           load_display_list_dma
 /* 000038 040010B8 841F0104 */   lh         $ra, load_wait_for_dma_and_run_next_command
 .L040010BC:
@@ -1231,10 +1231,10 @@ Overlay1Address:
 /* 000F84 04001054 00000000 */   nop
 wait_for_dma_and_run_next_command:
 /* 000F88 04001058 0D00044B */  jal         while_wait_dma_busy
-/* 000F8C 0400105C 201B09A0 */   li         inputBufferPos, inputBuffer
-/* 000F90 04001060 8F790000 */  lw          cmd_w0, 0x0(inputBufferPos)
+/* 000F8C 0400105C 201B09A0 */   li         inputBufferPos, inputBuffer         // init inputBufferPos
+/* 000F90 04001060 8F790000 */  lw          cmd_w0, 0x0(inputBufferPos)         // load first word of command
 .L04001064:
-/* 000F94 04001064 8F780004 */  lw          cmd_w1_dram, 0x4(inputBufferPos)
+/* 000F94 04001064 8F780004 */  lw          cmd_w1_dram, 0x4(inputBufferPos)    // load second word of command
 /* 000F98 04001068 00190F42 */  srl         $1, cmd_w0, 29                      // get 3 first bits
 /* 000F9C 0400106C 30210006 */  andi        $1, $1, 0x6                         // mask out 3rd bit
 /* 000FA0 04001070 237B0008 */  addi        inputBufferPos, inputBufferPos, 0x8 // next command
