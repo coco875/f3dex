@@ -1234,7 +1234,7 @@ wait_for_dma_and_run_next_command:
 /* 000F94 04001064 8F780004 */  lw          cmd_w1_dram, 0x4(inputBufferPos)
 /* 000F98 04001068 00190F42 */  srl         $1, cmd_w0, 29                      // get 3 first bits
 /* 000F9C 0400106C 30210006 */  andi        $1, $1, 0x6                         // mask out 3rd bit
-/* 000FA0 04001070 237B0008 */  addi        inputBufferPos, inputBufferPos, 0x8
+/* 000FA0 04001070 237B0008 */  addi        inputBufferPos, inputBufferPos, 0x8 // next command
 /* 000FA4 04001074 1C200006 */  bgtz        $1, dispatch_task
 /* 000FA8 04001078 333203FF */   andi       $18, cmd_w0, 0x3FF
 /* 000FAC 0400107C 20160AE0 */  li          $22, 0xAE0
