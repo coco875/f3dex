@@ -196,6 +196,7 @@ input_mtx_0 equ $20
 
 // Arguments to dma_read_write
 dmaLen   equ $18
+dmaLoad  equ $19
 dmemAddr equ $20
 
 // Arguments to load_overlay_and_enter
@@ -207,6 +208,8 @@ inputBufferPos equ $27
 .create CODE_FILE, 0x4001080
 // $11: very common local
 // $18: dmaLen
+// $19: dmaLoad
+// $20: dmemAddr
 // $24: cmd_w1_dram, local
 // $25: cmd_w0
 // $27: inputBufferPos
@@ -241,7 +244,7 @@ load_display_list_dma:
 /* 000048 040010C8 201C0AE0 */  li          $28, 0xAE0
 /* 00004C 040010CC 001FA820 */  add         $21, $zero, $ra
 /* 000050 040010D0 201409A0 */  li          dmemAddr, inputBuffer
-/* 000054 040010D4 001A9820 */  add         $19, $zero, $26
+/* 000054 040010D4 001A9820 */  add         dmaLoad, $zero, $26
 /* 000058 040010D8 235A0140 */  addi        $26, $26, 0x140
 /* 00005C 040010DC 0D00044F */  jal         dma_read
 /* 000060 040010E0 2012013F */   li         dmaLen, inputBufferLen
@@ -250,7 +253,7 @@ load_display_list_dma:
 load_overlay_fcn:
 /* 00006C 040010EC 001FA820 */  add         $21, $zero, $ra
 load_overlay:
-/* 000070 040010F0 8FD30000 */  lw          $19, overlay_load(ovlTableEntry)
+/* 000070 040010F0 8FD30000 */  lw          dmaLoad, overlay_load(ovlTableEntry)
 /* 000074 040010F4 87D20004 */  lh          dmaLen, overlay_len(ovlTableEntry)
 /* 000078 040010F8 0D00044F */  jal         dma_read
 /* 00007C 040010FC 87D40006 */   lh         dmemAddr, overlay_imem(ovlTableEntry)
@@ -387,7 +390,7 @@ func_04001204:
 /* 000240 040012C0 201403E0 */  li          $20, 0x3E0
 /* 000244 040012C4 00731822 */  sub         $3, $3, $19
 /* 000248 040012C8 0461FF74 */  bgez        $3, run_next_DL_command
-/* 00024C 040012CC 2273FFC0 */   addi       $19, $19, -0x40
+/* 00024C 040012CC 2273FFC0 */   addi       dmaLoad, $19, -0x40
 /* 000250 040012D0 0D00044F */  jal         dma_read
 /* 000254 040012D4 2012003F */   li         dmaLen, 0x3F
 /* 000258 040012D8 0D00044B */  jal         while_wait_dma_busy
@@ -1239,7 +1242,7 @@ wait_for_dma_and_run_next_command:
 /* 000FA8 04001078 333203FF */   andi       $18, cmd_w0, 0x3FF
 /* 000FAC 0400107C 20160AE0 */  li          $22, 0xAE0
 /* 000FB0 04001080 0D000443 */  jal         segmented_to_physical
-/* 000FB4 04001084 03009820 */   add        $19, cmd_w1_dram, $zero
+/* 000FB4 04001084 03009820 */   add        dmaLoad, cmd_w1_dram, $zero
 Overlay1End:
 
 // Overlay 2
@@ -1519,7 +1522,7 @@ Overlay4Address:
 /* 001398 040017D0 AC1B0BE8 */  sw          $27, 0xBE8($zero)
 /* 00139C 040017D4 AC1A0BEC */  sw          $26, 0xBEC($zero)
 /* 0013A0 040017D8 AC170BF0 */  sw          $23, 0xBF0($zero)
-/* 0013A4 040017DC 8C130108 */  lw          $19, 0x108($zero)
+/* 0013A4 040017DC 8C130108 */  lw          dmaLoad, 0x108($zero)
 /* 0013A8 040017E0 34140000 */  ori         dmemAddr, $zero, 0x0
 /* 0013AC 040017E4 34120BFF */  ori         dmaLen, $zero, 0xBFF
 /* 0013B0 040017E8 0D000450 */  jal         dma_read_write
