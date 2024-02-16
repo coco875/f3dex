@@ -1,4 +1,4 @@
-wait_for_dma_and_run_next_command
+## wait_for_dma_and_run_next_command
 
 ```mermaid
 stateDiagram-v2

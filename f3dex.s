@@ -73,12 +73,13 @@ lower24Mask:
 /* 0xb8 */ .dw 0x00ffffff
 operationJumpTable:
 /* 0xbc */ jumpTableEntry dispatch_dma        // 0x00
+run_next_DL_command_entry:
 /* 0xbe */ jumpTableEntry run_next_DL_command // 0x01
 /* 0xc0 */ jumpTableEntry dispatch_imm        // 0x02
 /* 0xc2 */ jumpTableEntry dispatch_rdp        // 0x03
 dmaJumpTable:
 /* 0xc4 */ jumpTableEntry run_next_DL_command // 0x00
-/* 0xc6 */ .dh 0x15dc
+/* 0xc6 */ jumpTableEntry dma_MTX
 /* 0xc8 */ jumpTableEntry run_next_DL_command
 /* 0xca */ .dh 0x1758
 /* 0xcc */ .dh 0x1430
@@ -121,7 +122,10 @@ load_wait_for_dma_and_run_next_command:
 /* 0x12c */ .dw 0x80000040
 .fill 8, 0
 /* 0x138 */ .dw 0x40004000
-.fill 100, 0
+.fill 36, 0
+/* 0x160 */
+segmentTable:
+.fill 0x40, 0
 /* 0x1a0 */ .dw 0x80000000
 /* 0x1a4 */ .dw 0x80000000
 .fill 8, 0
@@ -176,7 +180,19 @@ load_wait_for_dma_and_run_next_command:
 .fill 20, 0
 /* 0x390 */ .dw 0x01000000
 /* 0x394 */ .dw 0x00ff19c8
-.fill 1128, 0
+.fill 72,0
+// 0x3e0: Modelview matrix top of stack (0x40 bytes)
+mvMatrix:
+.fill 0x40, 0
+
+// 0x420 Projection Matrix top of stack (0x40 bytes)
+pMatrix:
+.fill 0x40, 0
+
+// 0x460: MP matrix (Modelview * Projection)
+mpMatrix:
+.fill 0x40, 0
+.fill 864, 0
 .close // DATA_FILE
 
 // he continue after the overlay data
@@ -190,9 +206,9 @@ cmd_w1_dram equ $24 // Command word 1, which is also DMA DRAM addr; almost globa
 cmd_w0      equ $25 // Command word 0; almost global, occasionally used locally
 
 // Arguments to mtx_multiply
-output_mtx  equ $18
-input_mtx_1 equ $19
-input_mtx_0 equ $20
+input_mtx_1 equ $1
+input_mtx_0 equ $2
+output_mtx  equ $3
 
 // Arguments to dma_read_write
 dmaLen   equ $18
@@ -217,6 +233,7 @@ inputBufferPos equ $27
 Overlay0Address:
 /* 000000 04001080 090005F0 */  j           start
 /* 000004 04001084 201D0110 */   li         $29, 0x110
+// it's where the L04001064 continue
 /* 000008 04001088 0D00044F */  jal         dma_read
 /* 00000C 0400108C 0016A020 */   add        dmemAddr, $zero, $22
 
@@ -262,13 +279,13 @@ load_overlay:
 /* 000088 04001108 02A00008 */  jr          $21
 segmented_to_physical:
 /* 00008C 0400110C 8C0B00B8 */   lw         $11, lower24Mask
-/* 000090 04001110 00136582 */  srl         $12, $19, 22
-/* 000094 04001114 318C003C */  andi        $12, $12, 0x3C
-/* 000098 04001118 026B9824 */  and         $19, $19, $11
-/* 00009C 0400111C 000C6820 */  add         $13, $zero, $12
-/* 0000A0 04001120 8DAC0160 */  lw          $12, 0x160($13)
+/* 000090 04001110 00136582 */  srl         $12, dmaLoad, 22       // upper 10 bits
+/* 000094 04001114 318C003C */  andi        $12, $12, 0x3C         // keep only 6 bits
+/* 000098 04001118 026B9824 */  and         dmaLoad, dmaLoad, $11  // keep only lower 24 bits
+/* 00009C 0400111C 000C6820 */  add         $13, $zero, $12        // move to $13 useless can be removed
+/* 0000A0 04001120 8DAC0160 */  lw          $12, segmentTable($13)
 /* 0000A4 04001124 03E00008 */  jr          $ra
-/* 0000A8 04001128 026C9820 */   add        $19, $19, $12
+/* 0000A8 04001128 026C9820 */   add        dmaLoad, dmaLoad, $12
 while_wait_dma_busy:
 /* 0000AC 0400112C 400B3000 */  mfc0        $11, SP_DMA_BUSY
 /* 0000B0 04001130 1560FFFE */  bnez        $11, while_wait_dma_busy
@@ -332,7 +349,7 @@ dispatch_imm:
 /* 000170 040011F0 84420076 */  lh          $2, 0x76($2)
 /* 000174 040011F4 00400008 */  jr          $2
 /* 000178 040011F8 9361FFFF */   lbu        $1, -0x1($27)
-/* 00017C 040011FC 841800BE */  lh          $24, 0xBE($zero)
+/* 00017C 040011FC 841800BE */  lh          $24, run_next_DL_command_entry
 func_04001200:
 /* 000180 04001200 841F0396 */  lh          $ra, 0x396($zero)
 func_04001204:
@@ -352,7 +369,7 @@ func_04001204:
 /* 0001B4 04001234 9363FFFB */  lbu         $3, -0x5($27)
 /* 0001B8 04001238 841F0396 */  lh          $ra, 0x396($zero)
 /* 0001BC 0400123C 09000484 */  j           .L04001210
-/* 0001C0 04001240 841800BE */   lh         $24, 0xBE($zero)
+/* 0001C0 04001240 841800BE */   lh         $24, run_next_DL_command_entry
 /* 0001C4 04001244 0D000481 */  jal         func_04001204
 /* 0001C8 04001248 9367FFFC */   lbu        $7, -0x4($27)
 /* 0001CC 0400124C 94E7031C */  lhu         $7, 0x31C($7)
@@ -383,7 +400,7 @@ func_04001204:
 /* 000224 040012A4 84020CDE */  lh          $2, 0xCDE($zero)
 /* 000228 040012A8 84030CDA */  lh          $3, 0xCDA($zero)
 /* 00022C 040012AC 09000672 */  j           func_040019C8
-/* 000230 040012B0 841800BE */   lh         $24, 0xBE($zero)
+/* 000230 040012B0 841800BE */   lh         $24, run_next_DL_command_entry
 /* 000234 040012B4 EBBF031C */  sbv         $v31[6], 0x1C($29)
 /* 000238 040012B8 8FB30024 */  lw          $19, 0x24($29)
 /* 00023C 040012BC 8C030FE0 */  lw          $3, 0xFE0($zero)
@@ -479,15 +496,16 @@ dispatch_rdp:
 /* 000394 04001414 0900042B */  j           .L040010AC
 dispatch_dma:
 /* 000398 04001418 304201FE */   andi       $2, $2, 0x1FE        // mask the 9th bit
-// here $9 contains the 2-8 bit multiplied by 2
+// here $2 contains the 2-8 bit multiplied by 2
 /* 00039C 0400141C 844200C4 */  lh          $2, dmaJumpTable($2)
 /* 0003A0 04001420 0D00044B */  jal         while_wait_dma_busy
-/* 0003A4 04001424 9361FFF9 */   lbu        $1, -0x7($27)
+/* 0003A4 04001424 9361FFF9 */   lbu        $1, -0x7(inputBufferPos)
 /* 0003A8 04001428 00400008 */  jr          $2
 /* 0003AC 0400142C 3026000F */   andi       $6, $1, 0xF
-/* 0003B0 04001430 840800BE */  lh          $8, 0xBE($zero)
+
+/* 0003B0 04001430 840800BE */  lh          $8, run_next_DL_command_entry
 /* 0003B4 04001434 A4080106 */  sh          $8, 0x106($zero)
-/* 0003B8 04001438 9369FFFA */  lbu         $9, -0x6($27)
+/* 0003B8 04001438 9369FFFA */  lbu         $9, -0x6(inputBufferPos)
 /* 0003BC 0400143C CAC21800 */  ldv         $v2[0], 0x0($22)
 /* 0003C0 04001440 CAC21C02 */  ldv         $v2[8], 0x10($22)
 /* 0003C4 04001444 00094882 */  srl         $9, $9, 2
@@ -597,13 +615,14 @@ dispatch_dma:
 .L040015D4:
 /* 000554 040015D4 84080106 */   lh         $8, 0x106($zero)
 /* 000558 040015D8 01000008 */  jr          $8
-/* 00055C 040015DC 30280001 */   andi       $8, $1, 0x1
+dma_MTX:
+/* 00055C 040015DC 30280001 */   andi       $8, $1, 0x1        // 1=projection, 0=modelview
 /* 000560 040015E0 EBBF031C */  sbv         $v31[6], 0x1C($29)
-/* 000564 040015E4 1500001B */  bnez        $8, .L04001654
-/* 000568 040015E8 30270002 */   andi       $7, $1, 0x2
+/* 000564 040015E4 1500001B */  bnez        $8, .L04001654     // if projection
+/* 000568 040015E8 30270002 */   andi       $7, $1, 0x2        // 1=load, 0=multiply
 /* 00056C 040015EC 201403E0 */  li          $20, 0x3E0
-/* 000570 040015F0 30280004 */  andi        $8, $1, 0x4
-/* 000574 040015F4 1100000A */  beqz        $8, .L04001620
+/* 000570 040015F0 30280004 */  andi        $8, $1, 0x4        // 1=push, 0=no push
+/* 000574 040015F4 1100000A */  beqz        $8, .L04001620     // if no push
 /* 000578 040015F8 CADA2003 */   lqv        $v26[0], 0x30($22)
 /* 00057C 040015FC 8FB30024 */  lw          $19, 0x24($29)
 /* 000580 04001600 8FA8004C */  lw          $8, 0x4C($29)
@@ -616,60 +635,60 @@ dispatch_dma:
 /* 00059C 0400161C 0D00044B */  jal         while_wait_dma_busy
 .L04001620:
 /* 0005A0 04001620 CADC2001 */   lqv        $v28[0], 0x10($22)
-/* 0005A4 04001624 10E0000E */  beqz        $7, .L04001660
+/* 0005A4 04001624 10E0000E */  beqz        $7, .L04001660     // if multiply
 /* 0005A8 04001628 CADB2002 */   lqv        $v27[0], 0x20($22)
 /* 0005AC 0400162C EA9A2003 */  sqv         $v26[0], 0x30($20)
 /* 0005B0 04001630 CADD2000 */  lqv         $v29[0], 0x0($22)
 /* 0005B4 04001634 EA9C2001 */  sqv         $v28[0], 0x10($20)
 .L04001638:
-/* 0005B8 04001638 20030460 */  li          $3, 0x460
+/* 0005B8 04001638 20030460 */  li          output_mtx, mpMatrix
 /* 0005BC 0400163C EA9B2002 */  sqv         $v27[0], 0x20($20)
 /* 0005C0 04001640 EA9D2000 */  sqv         $v29[0], 0x0($20)
 .L04001644:
-/* 0005C4 04001644 200103E0 */  li          $1, 0x3E0
-/* 0005C8 04001648 20020420 */  li          $2, 0x420
-/* 0005CC 0400164C 090005A1 */  j           func_04001684
-/* 0005D0 04001650 841F00BE */   lh         $ra, 0xBE($zero)
+/* 0005C4 04001644 200103E0 */  li          input_mtx_1, mvMatrix
+/* 0005C8 04001648 20020420 */  li          input_mtx_0, pMatrix
+/* 0005CC 0400164C 090005A1 */  j           mtx_multiply
+/* 0005D0 04001650 841F00BE */   lh         $ra, run_next_DL_command_entry
 .L04001654:
 /* 0005D4 04001654 CADA2003 */  lqv         $v26[0], 0x30($22)
 /* 0005D8 04001658 09000588 */  j           .L04001620
-/* 0005DC 0400165C 20140420 */   li         $20, 0x420
+/* 0005DC 0400165C 20140420 */   li         $20, pMatrix
 .L04001660:
-/* 0005E0 04001660 24030DE0 */  addiu       $3, $zero, 0xDE0
-/* 0005E4 04001664 00160821 */  addu        $1, $zero, $22
-/* 0005E8 04001668 0D0005A1 */  jal         func_04001684
-/* 0005EC 0400166C 00141021 */   addu       $2, $zero, $20
+/* 0005E0 04001660 24030DE0 */  la          output_mtx, 0xDE0
+/* 0005E4 04001664 00160821 */  addu        input_mtx_1, $zero, $22
+/* 0005E8 04001668 0D0005A1 */  jal         mtx_multiply
+/* 0005EC 0400166C 00141021 */   addu       input_mtx_0, $zero, $20
 /* 0005F0 04001670 EA862003 */  sqv         $v6[0], 0x30($20)
 /* 0005F4 04001674 EA852001 */  sqv         $v5[0], 0x10($20)
 /* 0005F8 04001678 C87B2000 */  lqv         $v27[0], 0x0($3)
 /* 0005FC 0400167C 0900058E */  j           .L04001638
 /* 000600 04001680 C87D207E */   lqv        $v29[0], 0x7E0($3)
-func_04001684:
-/* 000604 04001684 20730010 */  addi        $19, $3, 0x10
-.L04001688:
+mtx_multiply:
+/* 000604 04001684 20730010 */  addi        $19, output_mtx, 0x10
+@@loop:
 /* 000608 04001688 4B1FF947 */  vmudh       $v5, $v31, $v31[0]
-/* 00060C 0400168C 20320008 */  addi        $18, $1, 0x8
-.L04001690:
-/* 000610 04001690 C8431800 */  ldv         $v3[0], 0x0($2)
-/* 000614 04001694 C8441804 */  ldv         $v4[0], 0x20($2)
-/* 000618 04001698 C8212000 */  lqv         $v1[0], 0x0($1)
-/* 00061C 0400169C C8222002 */  lqv         $v2[0], 0x20($1)
-/* 000620 040016A0 C8431C00 */  ldv         $v3[8], 0x0($2)
-/* 000624 040016A4 C8441C04 */  ldv         $v4[8], 0x20($2)
+/* 00060C 0400168C 20320008 */  addi        $18, input_mtx_1, 0x8
+@@innerloop:
+/* 000610 04001690 C8431800 */  ldv         $v3[0], 0x0(input_mtx_0)
+/* 000614 04001694 C8441804 */  ldv         $v4[0], 0x20(input_mtx_0)
+/* 000618 04001698 C8212000 */  lqv         $v1[0], 0x0(input_mtx_1)
+/* 00061C 0400169C C8222002 */  lqv         $v2[0], 0x20(input_mtx_1)
+/* 000620 040016A0 C8431C00 */  ldv         $v3[8], 0x0(input_mtx_0)
+/* 000624 040016A4 C8441C04 */  ldv         $v4[8], 0x20(input_mtx_0)
 /* 000628 040016A8 4A82218C */  vmadl       $v6, $v4, $v2[0h]
-/* 00062C 040016AC 20210002 */  addi        $1, $1, 0x2
+/* 00062C 040016AC 20210002 */  addi        input_mtx_1, input_mtx_1, 0x2
 /* 000630 040016B0 4A82198D */  vmadm       $v6, $v3, $v2[0h]
-/* 000634 040016B4 20420008 */  addi        $2, $2, 0x8
+/* 000634 040016B4 20420008 */  addi        input_mtx_0, input_mtx_0, 0x8
 /* 000638 040016B8 4A81218E */  vmadn       $v6, $v4, $v1[0h]
 /* 00063C 040016BC 4A81194F */  vmadh       $v5, $v3, $v1[0h]
-/* 000640 040016C0 1432FFF3 */  bne         $1, $18, .L04001690
+/* 000640 040016C0 1432FFF3 */  bne         input_mtx_1, $18, @@innerloop
 /* 000644 040016C4 4B1FF98E */   vmadn      $v6, $v31, $v31[0]
-/* 000648 040016C8 2042FFE0 */  addi        $2, $2, -0x20
-/* 00064C 040016CC 20210008 */  addi        $1, $1, 0x8
-/* 000650 040016D0 E8652000 */  sqv         $v5[0], 0x0($3)
-/* 000654 040016D4 E8662002 */  sqv         $v6[0], 0x20($3)
-/* 000658 040016D8 1473FFEB */  bne         $3, $19, .L04001688
-/* 00065C 040016DC 20630010 */   addi       $3, $3, 0x10
+/* 000648 040016C8 2042FFE0 */  addi        input_mtx_0, input_mtx_0, -0x20
+/* 00064C 040016CC 20210008 */  addi        input_mtx_1, input_mtx_1, 0x8
+/* 000650 040016D0 E8652000 */  sqv         $v5[0], 0x0(output_mtx)
+/* 000654 040016D4 E8662002 */  sqv         $v6[0], 0x20(output_mtx)
+/* 000658 040016D8 1473FFEB */  bne         output_mtx, $19, @@loop
+/* 00065C 040016DC 20630010 */   addi       output_mtx, output_mtx, 0x10
 /* 000660 040016E0 03E00008 */  jr          $ra
 /* 000664 040016E4 00000000 */   nop
 func_040016E8:
